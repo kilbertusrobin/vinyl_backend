@@ -28,6 +28,10 @@ export class UserService {
     return user ? UserMapper.toGetDto(user) : null;
   }
 
+  async findByEmailWithPassword(email: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { email } });
+  }
+
   async create(dto: CreateUserDto): Promise<UserDto> {
     const user = CreateUserMapper.toEntity(dto);
     try {
