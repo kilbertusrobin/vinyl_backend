@@ -6,6 +6,7 @@ import { LoginDto } from './dtos/login.dto';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { ResetPasswordDto } from './dtos/reset-password.dto';
 import { ModifyPasswordDto } from './dtos/modify-password.dto';
+import { ResendVerifyEmailDto } from './dtos/resend-verify-email.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -24,6 +25,11 @@ export class AuthController {
   @Post('verify-email')
   verifyEmail(@Body() dto: VerifyEmailDto): Promise<UserDto> {
     return this.authService.verifyEmail(dto);
+  }
+
+  @Post('resend-verify-email')
+  resendVerifyEmail(@Body() dto: ResendVerifyEmailDto): Promise<{ message: string }> {
+    return this.authService.resendVerifyEmail(dto);
   }
 
   @Post('reset-password')
