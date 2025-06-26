@@ -13,12 +13,15 @@ import { User } from '../entities/user.entity';
 import { VerifyEmailDto } from './dtos/verify-email.dto';
 import { ResetPasswordDto } from "./dtos/reset-password.dto";
 import { ModifyPasswordDto } from "./dtos/modify-password.dto";
+import { MailService } from "src/mail/mail.service";
+import { ResendVerifyEmailDto } from "./dtos/resend-verify-email.dto";
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -37,6 +40,9 @@ export class AuthService {
       });
       userEntity.verifyEmailToken = verifyEmailToken;
       const saved = await this.userRepository.save(userEntity);
+
+      this.mailService.sendVerificationEmail(saved.email, verifyEmailToken);
+
       return UserMapper.toGetDto(saved);
     } catch (error) {
       if (error.code === '23505') {
@@ -76,6 +82,24 @@ export class AuthService {
     };
   }
 
+  async resendVerifyEmail(dto: ResendVerifyEmailDto): Promise<{ message: string }> {
+    const user = await this.userRepository.findOne({ where: { email: dto.email } });
+    if (!user) {
+      throw new NotFoundException('Aucun compte n\'existe avec cet email.');
+    }
+    if (user.isActive) {
+      throw new ForbiddenException('Le compte est déjà activé.');
+    }
+    user.verifyEmailToken = crypto.randomBytes(128).toString('hex');
+    await this.userRepository.save(user);
+    
+    this.mailService.sendResendVerificationEmail(user.email, user.verifyEmailToken);
+    
+    return {
+      message: 'Un nouvel email de vérification a été envoyé.',
+    };
+  }
+
   async resetPasswordRequest(dto: ResetPasswordDto): Promise<{ message: string; resetPasswordToken?: string }> {
     const user = await this.userRepository.findOne({ where: { email: dto.email } });
     if (!user) {
@@ -86,9 +110,11 @@ export class AuthService {
     }
     user.resetPasswordToken = crypto.randomBytes(128).toString('hex');
     await this.userRepository.save(user);
+
+    this.mailService.sendPasswordResetEmail(user.email, user.resetPasswordToken);
+    
     return {
-      message: 'Un lien de réinitialisation a été généré.',
-      resetPasswordToken: user.resetPasswordToken,
+      message: 'Un lien de réinitialisation a été envoyé sur votre boite mail.',
     };
   }
 
