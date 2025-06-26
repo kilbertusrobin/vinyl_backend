@@ -5,6 +5,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './routes/user/user.module';
 import { AuthModule } from './routes/user/auth/auth.module';
+import { ProfileModule } from './routes/profile/profile.module';
+import { ProductModule } from './routes/product/product.module';
+import { OrderModule } from './routes/order/order.module';
+import { FavorisModule } from './routes/favoris/favoris.module';
+import { DeliveryModule } from './routes/delivery/delivery.module';
+import { CategoryModule } from './routes/category/category.module';
+import { ArtistModule } from './routes/artist/artist.module';
 
 @Module({
   imports: [
@@ -28,6 +35,13 @@ import { AuthModule } from './routes/user/auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    ProfileModule,
+    ProductModule,
+    OrderModule,
+    FavorisModule,
+    DeliveryModule,
+    CategoryModule,
+    ArtistModule,
   ],
   controllers: [AppController],
   providers: [AppService],
