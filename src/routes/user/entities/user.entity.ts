@@ -1,6 +1,7 @@
 import { IsBoolean, IsEmail, IsOptional, IsString, IsStrongPassword } from 'class-validator';
 import { AbstractEntity } from 'src/shared';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToOne } from 'typeorm';
+import { Profile } from '../../profile/entities/profile.entity';
 
 @Entity('users')
 export class User extends AbstractEntity {
@@ -27,5 +28,8 @@ export class User extends AbstractEntity {
   @Column()
   @IsBoolean()
   isActive: boolean;
+
+  @OneToOne(() => Profile, profile => profile.user, { cascade: true })
+  profile: Profile;
 
 }
