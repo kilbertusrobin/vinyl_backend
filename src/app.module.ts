@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './routes/user/user.module';
 import { AuthModule } from './routes/user/auth/auth.module';
+import { StripeModule } from './stripe/stripe.module';
+import { MailModule } from './mail/mail.module';
 import { ProfileModule } from './routes/profile/profile.module';
 import { ProductModule } from './routes/product/product.module';
 import { OrderModule } from './routes/order/order.module';
@@ -35,6 +37,8 @@ import { ArtistModule } from './routes/artist/artist.module';
     }),
     UserModule,
     AuthModule,
+    StripeModule,
+    MailModule,
     ProfileModule,
     ProductModule,
     OrderModule,
