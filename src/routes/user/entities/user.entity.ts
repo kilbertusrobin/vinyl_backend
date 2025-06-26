@@ -14,11 +14,11 @@ export class User extends AbstractEntity {
   @IsStrongPassword()
   password: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   @IsString()
   @IsOptional()
-  verifyEmailToken: string;
-
+  verifyEmailToken: string | null;
+  
   @Column({ nullable: true })
   @IsString()
   @IsOptional()
