@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vérification de votre compte</title>
+<style>
+        /* Reset CSS pour les clients de messagerie */
+        body, table, td, p, a, li, blockquote {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+ 
+        /* Styles principaux */
+        body {
+            margin: 0 !important;
+            padding: 0 !important;
+            background-color: #f4f4f4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+ 
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+ 
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+ 
+        .header h1 {
+            color: #ffffff;
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+ 
+        .header p {
+            color: #ffffff;
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+ 
+        .content {
+            padding: 40px 30px;
+        }
+ 
+        .content h2 {
+            color: #333333;
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+        }
+ 
+        .content p {
+            color: #555555;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0 0 20px 0;
+        }
+ 
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+ 
+        .cta-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: transform 0.3s ease;
+        }
+ 
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+ 
+        .feature-section {
+            background-color: #f8f9fa;
+            padding: 30px;
+            margin: 30px 0;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+ 
+        .feature-grid {
+            display: table;
+            width: 100%;
+        }
+ 
+        .feature-item {
+            display: table-cell;
+            width: 33.33%;
+            text-align: center;
+            vertical-align: top;
+            padding: 0 15px;
+        }
+ 
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+ 
+        .feature-item h3 {
+            color: #333333;
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            font-weight: 600;
+        }
+ 
+        .feature-item p {
+            color: #666666;
+            font-size: 14px;
+            margin: 0;
+        }
+ 
+        .footer {
+            background-color: #333333;
+            padding: 30px;
+            text-align: center;
+        }
+ 
+        .footer p {
+            color: #cccccc;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+        }
+ 
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+ 
+        .social-links {
+            margin: 20px 0;
+        }
+ 
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            width: 40px;
+            height: 40px;
+            background-color: #555555;
+            border-radius: 50%;
+            color: #ffffff;
+            text-decoration: none;
+            line-height: 40px;
+            font-size: 18px;
+            transition: background-color 0.3s ease;
+        }
+ 
+        .social-links a:hover {
+            background-color: #667eea;
+        }
+ 
+        /* Styles responsive */
+        @media screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            .content {
+                padding: 20px !important;
+            }
+            .header {
+                padding: 30px 20px !important;
+            }
+            .header h1 {
+                font-size: 24px !important;
+            }
+            .feature-item {
+                display: block !important;
+                width: 100% !important;
+                margin-bottom: 30px;
+            }
+            .feature-grid {
+                display: block !important;
+            }
+        }
+</style>
+</head>
+<body>
+<div class="email-container">
+<!-- Header -->
+<div class="header">
+<h1>Bienvenue sur Vinyl Store !</h1>
+<p>Une dernière étape pour activer votre compte</p>
+</div>
+ 
+        <!-- Contenu principal -->
+<div class="content">
+<h2>Vérifiez votre adresse e-mail</h2>
+<p>Merci de vous être inscrit sur Vinyl Store. Pour activer votre compte et commencer à explorer notre collection, veuillez cliquer sur le bouton ci-dessous.</p>
+ 
+            <!-- Call-to-Action -->
+<div class="cta-section">
+<a href="{{verification_link}}" class="cta-button">Vérifier mon compte</a>
+</div>
+ 
+            <!-- Section fonctionnalités -->
+<div class="feature-section">
+<h2 style="text-align: center; margin-bottom: 30px;">Nos Services</h2>
+<div class="feature-grid">
+<div class="feature-item">
+<div class="feature-icon">✓</div>
+<h3>Qualité</h3>
+<p>Des produits et services de haute qualité pour répondre à vos besoins.</p>
+</div>
+<div class="feature-item">
+<div class="feature-icon">⚡</div>
+<h3>Rapidité</h3>
+<p>Livraison rapide et efficace pour votre satisfaction.</p>
+</div>
+<div class="feature-item">
+<div class="feature-icon">♥</div>
+<h3>Support</h3>
+<p>Une équipe dédiée à votre écoute 7j/7.</p>
+</div>
+</div>
+</div>
+ 
+            <p>N'hésitez pas à nous contacter si vous avez des questions. Nous sommes là pour vous accompagner dans tous vos projets.</p>
+</div>
+ 
+        <!-- Footer -->
+<div class="footer">
+<div class="social-links">
+<a href="#">f</a>
+<a href="#">t</a>
+<a href="#">in</a>
+<a href="#">@</a>
+</div>
+<p><strong>Votre Entreprise</strong></p>
+<p>123 Rue de la Paix, 75000 Paris, France</p>
+<p>Téléphone : +33 1 23 45 67 89</p>
+<p><a href="#">Se désabonner</a> | <a href="#">Politique de confidentialité</a></p>
+<p style="margin-top: 20px; font-size: 12px; color: #999999;">
+                Vous recevez cet email car vous êtes inscrit à notre newsletter.<br>
+                © 2025 Votre Entreprise. Tous droits réservés.
+</p>
+</div>
+</div>
+</body>
+</html>
