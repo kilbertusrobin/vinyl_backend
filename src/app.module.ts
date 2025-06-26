@@ -5,6 +5,8 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './routes/user/user.module';
 import { AuthModule } from './routes/user/auth/auth.module';
+import { StripeModule } from './stripe/stripe.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { AuthModule } from './routes/user/auth/auth.module';
     }),
     UserModule,
     AuthModule,
+    StripeModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
