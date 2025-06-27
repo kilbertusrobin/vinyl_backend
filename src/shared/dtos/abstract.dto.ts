@@ -1,20 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsNumber, IsString } from 'class-validator';
-import { CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { IsDate, IsString } from 'class-validator';
 
 export abstract class AbstractDto {
   @ApiProperty()
-  @IsNumber()
-  id: number;
+  @IsString()
+  id: string;
 
   @ApiProperty()
   @IsDate()
-  @CreateDateColumn()
   createdAt: Date;
 
   @ApiProperty()
   @IsDate()
-  @UpdateDateColumn()
   updatedAt: Date;
 }
-
