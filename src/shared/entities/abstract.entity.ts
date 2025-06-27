@@ -1,13 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsNumber } from 'class-validator';
+import { IsDate, IsString } from 'class-validator';
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
-@Entity('users')
+@Entity()
 export abstract class AbstractEntity {
   @ApiProperty()
-  @IsNumber()
+  @IsString()
   @PrimaryGeneratedColumn('uuid')
-  id: number;
+  id: string;
 
   @Column()
   @ApiProperty()
@@ -21,5 +21,3 @@ export abstract class AbstractEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-
-
