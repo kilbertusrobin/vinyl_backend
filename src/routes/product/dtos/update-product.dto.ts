@@ -1,11 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsUUID, IsNumber } from 'class-validator';
 
 export class UpdateProductDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   productName?: string;
+
+  @ApiProperty()
+  @IsString()
+  year: string;
+
+  @ApiProperty()
+  @IsNumber()
+  price: number;
 
   @ApiProperty({ type: [String], required: false })
   @IsOptional()

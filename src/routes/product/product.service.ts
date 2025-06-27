@@ -9,6 +9,7 @@ import { ProductMapper } from './mapper/product.mapper';
 import { CreateProductMapper } from './mapper/create-product.mapper';
 import { Artist } from '../artist/entities/artist.entity';
 import { Category } from '../category/entities/category.entity';
+import { FilterProductDto } from './dtos/filter-product.dto';
 
 @Injectable()
 export class ProductService {
@@ -91,5 +92,26 @@ export class ProductService {
       throw new NotFoundException('Produit non trouvé');
     }
     await this.productRepository.remove(product);
+  }
+
+  async filterProducts(filter: FilterProductDto): Promise<Product[]> {
+    const query = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.artists', 'artist')
+      .leftJoinAndSelect('product.categories', 'category');
+
+    if (filter.productName) {
+      query.andWhere('product.productName ILIKE :productName', { productName: `%${filter.productName}%` });
+    }
+    if (filter.artistName) {
+      query.andWhere('artist.name ILIKE :artistName', { artistName: `%${filter.artistName}%` });
+    }
+    if (filter.year) {
+      query.andWhere('product.year = :year', { year: filter.year });
+    }
+    if (filter.price) {
+      query.andWhere('product.price = :price', { price: filter.price });
+    }
+
+    return query.getMany();
   }
 }
