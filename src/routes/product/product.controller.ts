@@ -3,6 +3,7 @@ import { ProductService } from './product.service';
 import { ProductDto } from './dtos/product.dto';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
+import { FilterProductDto } from './dtos/filter-product.dto';
 
 @Controller('products')
 export class ProductController {
@@ -22,7 +23,7 @@ export class ProductController {
   async create(@Body() dto: CreateProductDto): Promise<ProductDto> {
     return this.productService.create(dto);
   }
-
+  
   @Patch('/:id')
   async update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateProductDto): Promise<ProductDto> {
     return this.productService.update(id, dto);
@@ -31,5 +32,10 @@ export class ProductController {
   @Delete('/:id')
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.productService.delete(id);
+  }
+
+  @Post('filter')
+  async filter(@Body() filter: FilterProductDto) {
+    return this.productService.filterProducts(filter);
   }
 }

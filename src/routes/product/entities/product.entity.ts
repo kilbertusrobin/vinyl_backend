@@ -1,6 +1,6 @@
 import { Column, Entity, JoinTable, ManyToMany } from 'typeorm';
 import { AbstractEntity } from 'src/shared';
-import { IsString } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 import { Artist } from '../../artist/entities/artist.entity';
 import { Category } from '../../category/entities/category.entity';
 import { Order } from '../../order/entities/order.entity';
@@ -11,6 +11,14 @@ export class Product extends AbstractEntity {
   @Column()
   @IsString()
   productName: string;
+
+  @Column()
+  @IsString()
+  year: string;
+
+  @Column()
+  @IsNumber()
+  price: number;
 
   @ManyToMany(() => Artist, artist => artist.products, { cascade: true })
   @JoinTable()
