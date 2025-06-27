@@ -7,6 +7,10 @@ export class UpdateProductDto {
   @IsString()
   productName?: string;
 
+  @ApiProperty()
+  @IsString()
+  imagePath: string;
+
   @ApiProperty({ type: [String], required: false })
   @IsOptional()
   @IsArray()

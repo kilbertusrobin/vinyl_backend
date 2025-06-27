@@ -7,6 +7,10 @@ export class ProductDto extends AbstractDto {
   @IsString()
   productName: string;
 
+  @ApiProperty()
+  @IsString()
+  imagePath: string;
+
   @ApiProperty({ type: [String], description: 'Liste des IDs des artistes', required: false })
   @IsOptional()
   @IsArray()
@@ -18,4 +22,6 @@ export class ProductDto extends AbstractDto {
   @IsArray()
   @IsUUID('4', { each: true })
   categoryIds?: string[];
+
+  
 }

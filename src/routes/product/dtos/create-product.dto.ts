@@ -6,6 +6,10 @@ export class CreateProductDto {
   @IsString()
   productName: string;
 
+  @ApiProperty()
+  @IsString()
+  imagePath: string;
+
   @ApiProperty({ type: [String], required: false })
   @IsOptional()
   @IsArray()
