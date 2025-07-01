@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany } from 'typeorm';
+import { Column, Entity, ManyToMany, OneToMany } from 'typeorm';
 import { AbstractEntity } from 'src/shared';
 import { IsString } from 'class-validator';
 import { Product } from '../../product/entities/product.entity';
@@ -13,6 +13,6 @@ export class Artist extends AbstractEntity {
   @IsString()
   bio: string;
 
-  @ManyToMany(() => Product, product => product.artists)
+  @OneToMany(() => Product, product => product.artists)
   products: Product[];
 }

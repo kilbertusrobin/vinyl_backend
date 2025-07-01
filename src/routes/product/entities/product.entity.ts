@@ -1,4 +1,4 @@
-import { Column, Entity, JoinTable, ManyToMany } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
 import { AbstractEntity } from 'src/shared';
 import { IsNumber, IsOptional, IsString } from 'class-validator';
 import { Artist } from '../../artist/entities/artist.entity';
@@ -26,11 +26,11 @@ export class Product extends AbstractEntity {
 
 
 
-  @ManyToMany(() => Artist, artist => artist.products, { cascade: true })
+  @ManyToOne(() => Artist, artist => artist.products, { cascade: true })
   @JoinTable()
   artists: Artist[];
 
-  @ManyToMany(() => Category, category => category.products, { cascade: true })
+  @ManyToOne(() => Category, category => category.products, { cascade: true })
   @JoinTable()
   categories: Category[];
 

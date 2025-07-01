@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany } from 'typeorm';
+import { Column, Entity, ManyToMany, OneToMany } from 'typeorm';
 import { AbstractEntity } from 'src/shared';
 import { IsString } from 'class-validator';
 import { Product } from '../../product/entities/product.entity';
@@ -9,6 +9,6 @@ export class Category extends AbstractEntity {
   @IsString()
   categoryName: string;
 
-  @ManyToMany(() => Product, product => product.categories)
+  @OneToMany(() => Product, product => product.categories)
   products: Product[];
 }
