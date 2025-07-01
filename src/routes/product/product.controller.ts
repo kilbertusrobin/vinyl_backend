@@ -32,4 +32,10 @@ export class ProductController {
   async delete(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.productService.delete(id);
   }
+
+  @Get('/category/:id')
+  async findByCategory(@Param('id', ParseUUIDPipe) id: string): Promise<ProductDto[]> {
+    return this.productService.findByCategoryId(id);
+  }
+
 }
