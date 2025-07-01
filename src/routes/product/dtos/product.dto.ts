@@ -15,6 +15,12 @@ export class ProductDto extends AbstractDto {
   @IsNumber()
   price: number;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+
   @ApiProperty({ type: [String], description: 'Liste des IDs des artistes', required: false })
   @IsOptional()
   @IsArray()

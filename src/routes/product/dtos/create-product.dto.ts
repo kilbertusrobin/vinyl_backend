@@ -14,6 +14,12 @@ export class CreateProductDto {
   @IsNumber()
   price: number;
 
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+
   @ApiProperty({ type: [String], required: false })
   @IsOptional()
   @IsArray()
