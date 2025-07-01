@@ -24,9 +24,9 @@ export class ProductService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(): Promise<ProductDto[]> {
+  async findAll(): Promise<ProductSimpleDetailsDto[]> {
     const products = await this.productRepository.find({ relations: ['artists', 'categories'] });
-    return products.map(ProductMapper.toGetDto);
+    return products.map(ProductMapper.toSimpleDetailsDto);
   }
 
   async findOne(id: string): Promise<ProductDto> {

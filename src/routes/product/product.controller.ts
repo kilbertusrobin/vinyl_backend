@@ -10,7 +10,7 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Get()
-  async findAll(): Promise<ProductDto[]> {
+  async findAll(): Promise<ProductSimpleDetailsDto[]> {
     return this.productService.findAll();
   }
 
