@@ -114,4 +114,16 @@ export class ProductService {
 
     return query.getMany();
   }
+
+  async findByCategoryId(categoryId: string): Promise<ProductDto[]> {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categories', 'category')
+      .leftJoinAndSelect('product.artists', 'artist')
+      .where('category.id = :categoryId', { categoryId })
+      .getMany();
+
+    return products.map(ProductMapper.toGetDto);
+  }
+
 }

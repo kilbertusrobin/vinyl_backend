@@ -38,4 +38,10 @@ export class ProductController {
   async filter(@Body() filter: FilterProductDto) {
     return this.productService.filterProducts(filter);
   }
+
+  @Get('/category/:id')
+  async findByCategory(@Param('id', ParseUUIDPipe) id: string): Promise<ProductDto[]> {
+    return this.productService.findByCategoryId(id);
+  }
+
 }
