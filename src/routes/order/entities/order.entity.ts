@@ -1,4 +1,4 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne } from 'typeorm';
 import { AbstractEntity } from 'src/shared';
 import { Product } from '../../product/entities/product.entity';
 import { Profile } from '../../profile/entities/profile.entity';

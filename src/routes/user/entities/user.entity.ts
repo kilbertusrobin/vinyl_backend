@@ -1,7 +1,8 @@
 import { IsBoolean, IsEmail, IsOptional, IsString, IsStrongPassword } from 'class-validator';
 import { AbstractEntity } from 'src/shared';
-import { Column, Entity, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { Profile } from '../../profile/entities/profile.entity';
+import { Role } from 'src/routes/role/entities/role.entity';
 
 @Entity('users')
 export class User extends AbstractEntity {
@@ -31,5 +32,9 @@ export class User extends AbstractEntity {
 
   @OneToOne(() => Profile, profile => profile.user, { cascade: true })
   profile: Profile;
+
+  @ManyToOne(() => Role, role => role.users)
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
 
 }

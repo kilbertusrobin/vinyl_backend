@@ -14,6 +14,7 @@ import { FavorisModule } from './routes/favoris/favoris.module';
 import { DeliveryModule } from './routes/delivery/delivery.module';
 import { CategoryModule } from './routes/category/category.module';
 import { ArtistModule } from './routes/artist/artist.module';
+import { RoleModule } from './routes/role/role.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ArtistModule } from './routes/artist/artist.module';
         database: configService.get<string>('DB_DATABASE'),
         autoLoadEntities: true,
         synchronize: true,
+        logging: true, 
       }),
     }),
     UserModule,
@@ -46,6 +48,7 @@ import { ArtistModule } from './routes/artist/artist.module';
     DeliveryModule,
     CategoryModule,
     ArtistModule,
+    RoleModule
   ],
   controllers: [AppController],
   providers: [AppService],

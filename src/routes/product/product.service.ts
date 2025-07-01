@@ -2,13 +2,14 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Product } from './entities/product.entity';
-import { ProductDto } from './dtos/product.dto';
+import { ProductDto, ProductDetailsDto, ProductSimpleDetailsDto } from './dtos/product.dto';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductMapper } from './mapper/product.mapper';
 import { CreateProductMapper } from './mapper/create-product.mapper';
 import { Artist } from '../artist/entities/artist.entity';
 import { Category } from '../category/entities/category.entity';
+import { FilterProductDto } from './dtos/filter-product.dto';
 
 @Injectable()
 export class ProductService {
@@ -23,9 +24,9 @@ export class ProductService {
     private readonly categoryRepository: Repository<Category>,
   ) {}
 
-  async findAll(): Promise<ProductDto[]> {
+  async findAll(): Promise<ProductSimpleDetailsDto[]> {
     const products = await this.productRepository.find({ relations: ['artists', 'categories'] });
-    return products.map(ProductMapper.toGetDto);
+    return products.map(ProductMapper.toSimpleDetailsDto);
   }
 
   async findOne(id: string): Promise<ProductDto> {
@@ -92,4 +93,53 @@ export class ProductService {
     }
     await this.productRepository.remove(product);
   }
+
+  async filterProducts(filter: FilterProductDto): Promise<Product[]> {
+    const query = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.artists', 'artist')
+      .leftJoinAndSelect('product.categories', 'category');
+
+    if (filter.productName) {
+      query.andWhere('product.productName ILIKE :productName', { productName: `%${filter.productName}%` });
+    }
+    if (filter.artistName) {
+      query.andWhere('artist.name ILIKE :artistName', { artistName: `%${filter.artistName}%` });
+    }
+    if (filter.date) {
+      query.andWhere('product.date = :date', { date: filter.date });
+    }
+    if (filter.price) {
+      query.andWhere('product.price = :price', { price: filter.price });
+    }
+
+    return query.getMany();
+  }
+
+  async findByCategoryId(categoryId: string): Promise<ProductDto[]> {
+    const products = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categories', 'category')
+      .leftJoinAndSelect('product.artists', 'artist')
+      .where('category.id = :categoryId', { categoryId })
+      .getMany();
+
+    return products.map(ProductMapper.toGetDto);
+  }
+
+  async findDetailsById(id: string): Promise<ProductDetailsDto> {
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
+    }
+    return ProductMapper.toDetailsDto(product);
+  }
+
+  async findSimpleDetailsById(id: string): Promise<ProductSimpleDetailsDto> {
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
+    }
+    return ProductMapper.toSimpleDetailsDto(product);
+  }
+
 }
