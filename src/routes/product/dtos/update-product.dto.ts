@@ -9,6 +9,10 @@ export class UpdateProductDto {
   @IsString()
   productName?: string;
 
+  @ApiProperty()
+  @IsString()
+  imagePath: string;
+  
   @Transform(({ value }) => {
     if (typeof value !== 'string') return null;
     const parsedDate = parse(value, 'dd/MM/yyyy', new Date());

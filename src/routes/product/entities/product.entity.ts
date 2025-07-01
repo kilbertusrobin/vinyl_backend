@@ -34,6 +34,11 @@ export class Product extends AbstractEntity {
   @JoinTable()
   categories: Category[];
 
+  @Column({ nullable: true })
+  @IsString()
+  @IsOptional()
+  imagePath?: string; 
+
   @ManyToMany(() => Order, order => order.products)
   orders: Order[];
 }

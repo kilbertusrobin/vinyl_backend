@@ -11,6 +11,10 @@ export class ProductDto extends AbstractDto {
   @IsString()
   productName: string;
 
+  @ApiProperty()
+  @IsString()
+  imagePath: string;
+
   @Transform(({ value }) => {
     if (typeof value !== 'string') return null;
     const parsedDate = parse(value, 'dd/MM/yyyy', new Date());
@@ -39,6 +43,8 @@ export class ProductDto extends AbstractDto {
   @IsArray()
   @IsUUID('4', { each: true })
   categoryIds?: string[];
+
+  
 }
 
 export class ProductDetailsDto extends AbstractDto {
