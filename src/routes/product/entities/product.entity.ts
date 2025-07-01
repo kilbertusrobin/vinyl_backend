@@ -24,8 +24,6 @@ export class Product extends AbstractEntity {
   @IsString()
   description?: string;
 
-
-
   @ManyToMany(() => Artist, artist => artist.products, { cascade: true })
   @JoinTable()
   artists: Artist[];
