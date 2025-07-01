@@ -7,7 +7,7 @@ export class ProductMapper {
     const dto = new ProductDto();
     dto.id = product.id;
     dto.productName = product.productName;
-    dto.year = product.year;
+    dto.date = product.date;
     dto.price = product.price;
     dto.description = product.description;
     dto.createdAt = product.createdAt;
@@ -21,7 +21,7 @@ export class ProductMapper {
     const product = new Product();
     product.id = dto.id;
     product.productName = dto.productName;
-    product.year = dto.year;
+    product.date = dto.date;
     product.price = dto.price;
     product.description = dto.description;
     product.artists = dto.artistIds?.map(id => ({ id } as any)) ?? [];
@@ -34,7 +34,7 @@ export class ProductMapper {
   static fromCreateDto(dto: CreateProductDto): Product {
     const product = new Product();
     product.productName = dto.productName;
-    product.year = dto.year;
+    product.date = dto.date;
     product.price = dto.price;
     product.description = dto.description;
     product.artists = dto.artistIds?.map(id => ({ id } as any)) ?? [];

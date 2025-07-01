@@ -5,7 +5,7 @@ export class CreateProductMapper {
   static toGetDto(product: Product): CreateProductDto {
     const dto = new CreateProductDto();
     dto.productName = product.productName;
-    dto.year = product.year;
+    dto.date = product.date;
     dto.price = product.price;
     dto.description = product.description;
     dto.artistIds = product.artists?.map(artist => artist.id) ?? [];
@@ -16,7 +16,7 @@ export class CreateProductMapper {
   static toEntity(dto: CreateProductDto): Product {
     const product = new Product();
     product.productName = dto.productName;
-    product.year = dto.year;
+    product.date = dto.date;
     product.price = dto.price;
     product.description = dto.description;
     product.artists = dto.artistIds?.map(id => ({ id } as any)) ?? [];

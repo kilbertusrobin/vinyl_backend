@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, IsUUID, IsNumber } from 'class-validator';
+import { IsString, IsArray, IsUUID, IsOptional, IsNumber, IsDate } from 'class-validator';
+import { Transform } from 'class-transformer';
+const { parse } = require('date-fns');
 
 export class UpdateProductDto {
   @ApiProperty({ required: false })
@@ -7,9 +9,13 @@ export class UpdateProductDto {
   @IsString()
   productName?: string;
 
-  @ApiProperty()
-  @IsString()
-  year: string;
+  @Transform(({ value }) => {
+    if (typeof value !== 'string') return null;
+    const parsedDate = parse(value, 'dd/MM/yyyy', new Date());
+    return isNaN(parsedDate.getTime()) ? null : parsedDate;
+  })
+  @IsDate()
+  date: Date;
 
   @ApiProperty()
   @IsNumber()

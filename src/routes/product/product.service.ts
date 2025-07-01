@@ -105,8 +105,8 @@ export class ProductService {
     if (filter.artistName) {
       query.andWhere('artist.name ILIKE :artistName', { artistName: `%${filter.artistName}%` });
     }
-    if (filter.year) {
-      query.andWhere('product.year = :year', { year: filter.year });
+    if (filter.date) {
+      query.andWhere('product.date = :date', { date: filter.date });
     }
     if (filter.price) {
       query.andWhere('product.price = :price', { price: filter.price });

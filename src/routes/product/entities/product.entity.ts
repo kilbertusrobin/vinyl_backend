@@ -12,9 +12,8 @@ export class Product extends AbstractEntity {
   @IsString()
   productName: string;
 
-  @Column()
-  @IsString()
-  year: string;
+  @Column({ type: 'date' })
+  date: Date;
 
   @Column()
   @IsNumber()
