@@ -1,32 +1,52 @@
+version: '3.8'
+
 services:
   db:
-    image: postgres:17.5
+    image: postgres:15.5
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: vinyl
     ports:
-      - '5433:5432' # 5433 côté host pour éviter les conflits locaux
+      - '5433:5432'  # port exposé sur l'hôte (postgres sera accessible sur localhost:5433)
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   app:
     build: .
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     env_file:
       - .env
     ports:
       - '3000:3000'
     restart: always
     environment:
-      # Ces variables peuvent être surchargées par le .env
-      DATABASE_HOST: db
-      DATABASE_PORT: 5432
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgres
-      DATABASE_NAME: vinyl
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: vinyl
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '8080:80'
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
-  db_data: 
+  db_data:
