@@ -9,6 +9,6 @@ export class Category extends AbstractEntity {
   @IsString()
   categoryName: string;
 
-  @OneToMany(() => Product, product => product.categories)
+  @ManyToMany(() => Product, product => product.categories)
   products: Product[];
 }

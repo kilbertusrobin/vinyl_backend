@@ -11,7 +11,7 @@ export class Order extends AbstractEntity {
   @IsDate()
   orderDate: Date;
 
-  @OneToMany(() => Product, product => product.orders, { cascade: true })
+  @ManyToMany(() => Product, product => product.orders, { cascade: true })
   @JoinTable()
   products: Product[];
 

@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Product } from './entities/product.entity';
-import { ProductDto } from './dtos/product.dto';
+import { ProductDto, ProductDetailsDto, ProductSimpleDetailsDto } from './dtos/product.dto';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductMapper } from './mapper/product.mapper';
@@ -124,6 +124,22 @@ export class ProductService {
       .getMany();
 
     return products.map(ProductMapper.toGetDto);
+  }
+
+  async findDetailsById(id: string): Promise<ProductDetailsDto> {
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
+    }
+    return ProductMapper.toDetailsDto(product);
+  }
+
+  async findSimpleDetailsById(id: string): Promise<ProductSimpleDetailsDto> {
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
+    }
+    return ProductMapper.toSimpleDetailsDto(product);
   }
 
 }

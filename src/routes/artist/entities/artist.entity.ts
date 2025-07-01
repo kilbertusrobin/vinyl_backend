@@ -13,6 +13,6 @@ export class Artist extends AbstractEntity {
   @IsString()
   bio: string;
 
-  @OneToMany(() => Product, product => product.artists)
+  @ManyToMany(() => Product, product => product.artists)
   products: Product[];
 }

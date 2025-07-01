@@ -26,11 +26,11 @@ export class Product extends AbstractEntity {
 
 
 
-  @ManyToOne(() => Artist, artist => artist.products, { cascade: true })
+  @ManyToMany(() => Artist, artist => artist.products, { cascade: true })
   @JoinTable()
   artists: Artist[];
 
-  @ManyToOne(() => Category, category => category.products, { cascade: true })
+  @ManyToMany(() => Category, category => category.products, { cascade: true })
   @JoinTable()
   categories: Category[];
 
