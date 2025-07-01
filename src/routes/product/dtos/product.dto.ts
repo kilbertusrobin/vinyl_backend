@@ -60,6 +60,10 @@ export class ProductDetailsDto extends AbstractDto {
   @IsNumber()
   price: number;
 
+  @ApiProperty()
+  @IsString()
+  imagePath: string;
+
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -84,6 +88,10 @@ export class ArtistNameBioDto {
 export class ProductSimpleDetailsDto {
   id: string;
   productName: string;
+  date: Date;
+  price: number;
+  imagePath: string;
+  description: string;
   artistInfos: ArtistNameBioDto[];
   categoryNames: string[];
 }

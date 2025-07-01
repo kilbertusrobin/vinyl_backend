@@ -77,7 +77,10 @@ export class ProductMapper {
       productName: product.productName,
       artistInfos: product.artists?.map(a => ({ name: a.name, bio: a.bio })) ?? [],
       categoryNames: product.categories?.map(c => c.categoryName) ?? [],
-    };
+      date: product.date,
+      price: product.price,
+      imagePath: product.imagePath ?? '',
+      description: product.description ?? '',
+    }
   }
-
 }
