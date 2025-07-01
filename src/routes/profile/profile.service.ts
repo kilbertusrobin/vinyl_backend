@@ -51,4 +51,10 @@ export class ProfileService {
     if (!entity) throw new NotFoundException('Profil non trouvé');
     await this.repo.remove(entity);
   }
+
+  async findByUserId(userId: string): Promise<ProfileDto> {
+    const entity = await this.repo.findOne({ where: { user: { id: userId } }, relations: ['user'] });
+    if (!entity) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    return ProfileMapper.toGetDto(entity);
+  }
 }

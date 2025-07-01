@@ -32,4 +32,9 @@ export class ProfileController {
   remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
     return this.service.delete(id);
   }
+
+  @Get('user/:userId')
+  findByUserId(@Param('userId', ParseUUIDPipe) userId: string): Promise<ProfileDto> {
+    return this.service.findByUserId(userId);
+  }
 }
