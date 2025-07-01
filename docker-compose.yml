@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: vinyl
     ports:
-      - '5433:5432'
+      - '5433:5432'  # port exposé sur l'hôte (postgres sera accessible sur localhost:5433)
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -35,6 +35,18 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: vinyl
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - '8080:80'
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   db_data:
