@@ -1,17 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString, IsUUID } from 'class-validator';
-import { TargetType } from '../entities/favoris.entity';
+import { IsUUID, IsBoolean } from 'class-validator';
 
 export class CreateFavorisDto {
-  @ApiProperty({ enum: TargetType })
-  @IsEnum(TargetType)
-  targetType: TargetType;
-
   @ApiProperty()
-  @IsString()
-  targetId: string;
+  @IsUUID()
+  productId: string;
 
   @ApiProperty()
   @IsUUID()
   profileId: string;
+
+  @ApiProperty({ description: 'Indique si le produit est en favoris' })
+  @IsBoolean()
+  isFavoris: boolean;
 }

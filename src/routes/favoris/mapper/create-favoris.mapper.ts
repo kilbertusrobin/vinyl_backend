@@ -4,9 +4,9 @@ import { Favoris } from '../entities/favoris.entity';
 export class CreateFavorisMapper {
   static toEntity(dto: CreateFavorisDto): Favoris {
     const entity = new Favoris();
-    entity.targetType = dto.targetType;
-    entity.targetId = dto.targetId;
+    entity.product = { id: dto.productId } as any;
     entity.profile = { id: dto.profileId } as any;
+    entity.isFavoris = dto.isFavoris;
     return entity;
   }
 }

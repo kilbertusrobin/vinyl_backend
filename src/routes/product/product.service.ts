@@ -10,6 +10,8 @@ import { CreateProductMapper } from './mapper/create-product.mapper';
 import { Artist } from '../artist/entities/artist.entity';
 import { Category } from '../category/entities/category.entity';
 import { FilterProductDto } from './dtos/filter-product.dto';
+import { User } from '../user/entities/user.entity';
+import { Profile } from '../profile/entities/profile.entity';
 
 @Injectable()
 export class ProductService {
@@ -22,6 +24,12 @@ export class ProductService {
 
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
   ) {}
 
   async findAll(): Promise<ProductSimpleDetailsDto[]> {
@@ -140,6 +148,27 @@ export class ProductService {
       throw new NotFoundException('Produit non trouvé');
     }
     return ProductMapper.toSimpleDetailsDto(product);
+  }
+
+  async findFavorisByUserId(userId: string): Promise<ProductSimpleDetailsDto[]> {
+    console.log('Recherche des favoris pour l\'utilisateur:', userId);
+    
+    const profile = await this.profileRepository.findOne({ 
+      where: { user: { id: userId } }, 
+      relations: ['favoris', 'favoris.product', 'favoris.product.artists', 'favoris.product.categories'] 
+    });
+    
+    if (!profile) {
+      console.log('Profil non trouvé pour cet utilisateur');
+      throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    }
+
+    console.log('Profil trouvé:', profile.id);
+    console.log('Nombre de favoris trouvés:', profile.favoris?.length || 0);
+
+    return (profile.favoris || [])
+      .filter(favori => favori.isFavoris)
+      .map(favori => ProductMapper.toSimpleDetailsDto(favori.product));
   }
 
 }

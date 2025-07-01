@@ -1,16 +1,11 @@
 import { AbstractDto } from 'src/shared';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsString, IsUUID } from 'class-validator';
-import { TargetType } from '../entities/favoris.entity';
+import { IsUUID } from 'class-validator';
 
 export class FavorisDto extends AbstractDto {
-  @ApiProperty({ enum: TargetType })
-  @IsEnum(TargetType)
-  targetType: TargetType;
-
   @ApiProperty()
-  @IsString()
-  targetId: string;
+  @IsUUID()
+  productId: string;
 
   @ApiProperty()
   @IsUUID()
