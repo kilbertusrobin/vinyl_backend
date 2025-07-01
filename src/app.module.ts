@@ -14,6 +14,7 @@ import { FavorisModule } from './routes/favoris/favoris.module';
 import { DeliveryModule } from './routes/delivery/delivery.module';
 import { CategoryModule } from './routes/category/category.module';
 import { ArtistModule } from './routes/artist/artist.module';
+import { RecommendationModule } from './routes/recommendation/recommendation.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ArtistModule } from './routes/artist/artist.module';
     MailModule,
     ProfileModule,
     ProductModule,
+    RecommendationModule,
     OrderModule,
     FavorisModule,
     DeliveryModule,
