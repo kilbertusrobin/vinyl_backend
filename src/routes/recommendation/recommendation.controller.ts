@@ -9,141 +9,144 @@ import {
   ParseIntPipe,
   HttpStatus,
   HttpCode,
+  Headers,
+  BadRequestException,
 } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
 import { Recommendation } from './entities/recommendation.entity';
+import { Product } from './entities/product.entity';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('recommendations')
 @Controller('recommendations')
 export class RecommendationController {
-  constructor(private readonly recommendation.service: RecommendationService) {}
+  constructor(private readonly recommendationService: RecommendationService) {}
 
   @Post()
-  create(@Body() Recommendation: Recommendation) {
-    return this.recommendationService.create(Recommendation);
+  create(@Body() createRecommendationDto: Partial<Recommendation>): Promise<Recommendation> {
+    return this.recommendationService.create(createRecommendationDto);
   }
 
   @Get()
-  findAll() {
+  @ApiOperation({ summary: 'Get all recommendations' })
+  findAll(): Promise<Recommendation[]> {
     return this.recommendationService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: string) {
+  @ApiParam({ name: 'id', description: 'Recommendation ID' })
+  findOne(@Param('id', ParseIntPipe) id: number): Promise<Recommendation> {
     return this.recommendationService.findOne(id);
   }
 
   @Get('profile/:profileId')
-  getRecommendationByIdProfile(@Param('profileId', ParseIntPipe) profileId: string) {
-    return this.recommendationService.getRecommendationByIdProfile(profileId);
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
+  getRecommendationByProfile(
+    @Param('profileId', ParseIntPipe) profileId: number
+  ): Promise<Recommendation> {
+    return this.recommendationService.getRecommendationByProfile(profileId);
   }
 
   @Patch(':id')
+  @ApiParam({ name: 'id', description: 'Recommendation ID' })
   update(
-    @Param('id', ParseIntPipe) id: string,
-    @Body() recommendation: Recommendation,
-  ) {
-    return this.recommendationService.update(id, recommendation);
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateRecommendationDto: Partial<Recommendation>,
+  ): Promise<Recommendation> {
+    return this.recommendationService.update(id, updateRecommendationDto);
   }
 
   @Patch('profile/:profileId')
-  updateRecommendationByProfileId(
-    @Param('profileId', ParseIntPipe) profileId: string,
-    @Body() recommendation: Recommendation,
-  ) {
-    return this.recommendationService.updateRecommendationByProfileId(profileId, recommendation);
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
+  updateRecommendationByProfile(
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @Body() updateRecommendationDto: Partial<Recommendation>,
+  ): Promise<Recommendation> {
+    return this.recommendationService.updateRecommendationByProfile(profileId, updateRecommendationDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseIntPipe) id: string) {
+  @ApiParam({ name: 'id', description: 'Recommendation ID' })
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
     return this.recommendationService.remove(id);
   }
 
+  @Post('profile/:profileId')
 
-  @Post('profile/:profileId/')
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
   upsertRecommendationForProfile(
-    @Param('profileId', ParseIntPipe) profileId: string,
-    @Body() recommendation: Recommendation,
-  ) {
-    return this.recommendationService.upsertRecommendationForProfile(profileId, recommendation);
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @Body() recommendationData: Partial<Recommendation>,
+  ): Promise<Recommendation> {
+    return this.recommendationService.upsertRecommendationForProfile(profileId, recommendationData);
   }
 
-
-//le ProductID en body pour l'ajouter a l'historic d'achat
-@Post('profile/time/:profileId')
-@HttpCode(204)
-async MajHistoricProfile(
-  @Param('profileId') profileId: string,
-  @Headers('content-type') contentType: string,
-  @Body() rawBody: any
-) {
-  let data;
-
-  if (contentType === 'text/plain') {
-    try {
-      data = JSON.parse(rawBody);
-    } catch (e) {
-      console.error('Erreur JSON:', e);
-      return;
+  @Post('profile/:profileId/purchase-history')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
+  async updatePurchaseHistory(
+    @Param('profileId', ParseIntPipe) profileId: number,
+    @Headers('content-type') contentType: string,
+    @Body() rawBody: any
+  ): Promise<void> {
+    const articleId = this.extractArticleId(rawBody, contentType);
+    if (!articleId) {
+      throw new BadRequestException('articleId is required');
     }
-  } else {
-    data = rawBody;
+    await this.recommendationService.updatePurchaseHistory(profileId, articleId);
   }
 
-  const articleId = data?.articleId;
-  if (!articleId) {
-    console.error('articleId manquant dans la requête');
-    return;
+  @Get('recommended-from-fav/:profileId')
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
+  async getRecommendedProducts(
+    @Param('profileId', ParseIntPipe) profileId: number
+  ): Promise<Product[]> {
+    return this.recommendationService.getRecommendedProducts(profileId);
   }
 
-  const existingRecommendation = await this.recommendationService.getRecommendationByIdProfile(profileId);
-
-  let historyList: string[] = [];
-
-  if (existingRecommendation?.historicAchat) {
-    historyList = existingRecommendation.historicAchat.split(',');
-    // Retirer l'article s’il est déjà présent pour éviter les doublons
-    historyList = historyList.filter(id => id !== articleId);
+  @Get('recommended-from-history/:profileId')
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
+  async getRecommendedProductsFromHistory(
+    @Param('profileId', ParseIntPipe) profileId: number
+  ): Promise<Product[]> {
+    return this.recommendationService.getRecommendedProductsFromHistory(profileId);
   }
 
-  // Ajouter le nouvel articleId au début
-  historyList.unshift(articleId);
-
-  // Limiter à 10 articles max
-  if (historyList.length > 10) {
-    historyList = historyList.slice(0, 10);
+  @Get('recommended/:profileId')
+  @ApiParam({ name: 'profileId', description: 'Profile ID' })
+  async getRecommendedProducts(
+    @Param('profileId', ParseIntPipe) profileId: number
+  ): Promise<Product[]> {
+    return this.recommendationService.getCombinedRecommendedProducts(profileId);
   }
 
-  const updatedHistoric = historyList.join(',');
 
-  const recommendation: Recommendation = {
-    historicAchat: updatedHistoric,
-    productFav: articleId,
-  };
-
-  await this.recommendationService.upsertRecommendationForProfile(profileId, recommendation);
-}
+  @Get('global')
+  async getGlobalRecommendations(): Promise<Product[]> {
+    return this.recommendationService.GetRecommendedProductGlobal();
+  }
 
 
-//Retourne une liste d'idProduct (les Product Recommandé 10 products )
-@Get('recommended/:profileId')
-@ApiOperation({ summary: 'Get recommended products for a profile' })
-@ApiParam({ name: 'profileId', description: 'Profile ID' })
-async getRecommendedProducts(
-  @Param('profileId', ParseIntPipe) profileId: string
-) {
-  return this.recommendationService.getRecommendedProducts(profileId);
-}
 
 
-//les Product Recommandé celon Historic d'achat (10 products)
-@Get('recommended-from-history/:profileId')
-@ApiOperation({ summary: 'Get recommended products based on purchase history' })
-@ApiParam({ name: 'profileId', description: 'Profile ID' })
-async getRecommendedProductsFromHistory(
-  @Param('profileId') profileId: string
-) {
-  return this.recommendationService.getRecommendedProductsFromHistory(profileId);
+  /**
+   * Extrait l'articleId du body de la requête selon le content-type
+   */
+  private extractArticleId(rawBody: any, contentType: string): string | null {
+    let data;
+
+    if (contentType === 'text/plain') {
+      try {
+        data = JSON.parse(rawBody);
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        return null;
+      }
+    } else {
+      data = rawBody;
+    }
+
+    return data?.articleId || null;
+  }
 }

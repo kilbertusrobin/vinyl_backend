@@ -1,35 +1,49 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Recommendation } from './entities/recommendation.entity';
+import { Favoris, TargetType } from './entities/favoris.entity';
+import { Product } from './entities/product.entity';
+
+interface HistoryBasedPreferences {
+  mostFrequentCategory: string;
+  mostFrequentArtist: string;
+}
 
 @Injectable()
 export class RecommendationService {
+  private static readonly MAX_HISTORY_SIZE = 10;
+  private static readonly MAX_RECOMMENDED_PRODUCTS = 10;
+
   constructor(
     @InjectRepository(Recommendation)
-    @InjectRepository(Favoris) private favorisRepository: Repository<Favoris>,
-      @InjectRepository(Product) private productRepository: Repository<Product>,
-
     private readonly recommendationRepository: Repository<Recommendation>,
+    @InjectRepository(Favoris)
+    private readonly favorisRepository: Repository<Favoris>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
   ) {}
 
-
-//Créer une nouvelle recommandation pour un profil
-  async create(recommendation: recommendation): Promise<Recommendation> {
-    const recommendation = this.recommendationRepository.create(recommendation);
-    return await this.recommendationRepository.save(recommendation);
+  /**
+   * Crée une nouvelle recommandation
+   */
+  async create(createRecommendationDto: Partial<Recommendation>): Promise<Recommendation> {
+    const newRecommendation = this.recommendationRepository.create(createRecommendationDto);
+    return await this.recommendationRepository.save(newRecommendation);
   }
 
-
-//Récupérer toutes les recommandations
+  /**
+   * Récupère toutes les recommandations
+   */
   async findAll(): Promise<Recommendation[]> {
     return await this.recommendationRepository.find({
       relations: ['profile'],
     });
   }
 
-
-//Récupérer une recommandation par ID
+  /**
+   * Récupère une recommandation par ID
+   */
   async findOne(id: number): Promise<Recommendation> {
     const recommendation = await this.recommendationRepository.findOne({
       where: { id },
@@ -43,135 +57,273 @@ export class RecommendationService {
     return recommendation;
   }
 
-
-//Récupérer les préférences/recommandations par ID de profil
-  async getPreferenceByIdProfile(profileId: number): Promise<Recommendation> {
-    const recommendation = await this.recommendationRepository.findOne({
+  /**
+   * Récupère une recommandation par ID de profil
+   */
+  async getRecommendationByProfile(profileId: number): Promise<Recommendation | null> {
+    return await this.recommendationRepository.findOne({
       where: { profile: { id: profileId } },
       relations: ['profile'],
     });
+  }
 
-    if (!recommendation) {
+  /**
+   * Met à jour une recommandation
+   */
+  async update(id: number, updateRecommendationDto: Partial<Recommendation>): Promise<Recommendation> {
+    const existingRecommendation = await this.findOne(id);
+    Object.assign(existingRecommendation, updateRecommendationDto);
+    return await this.recommendationRepository.save(existingRecommendation);
+  }
+
+  /**
+   * Met à jour une recommandation par ID de profil
+   */
+  async updateRecommendationByProfile(
+    profileId: number,
+    updateRecommendationDto: Partial<Recommendation>
+  ): Promise<Recommendation> {
+    const existingRecommendation = await this.getRecommendationByProfile(profileId);
+
+    if (!existingRecommendation) {
       throw new NotFoundException(`No recommendation found for profile ID ${profileId}`);
     }
 
-    return recommendation;
+    Object.assign(existingRecommendation, updateRecommendationDto);
+    return await this.recommendationRepository.save(existingRecommendation);
   }
 
-
-//Mettre à jour une recommandation
-  async update(id: string, recommendation: recommendation): Promise<Recommendation> {
-    const recommendation = await this.findOne(id);
-
-    Object.assign(recommendation, recommendation);
-
-    return await this.recommendationRepository.save(recommendation);
-  }
-
-
-//Mettre à jour les préférences par ID de profil
-  async updatePreferenceByProfileId(
-    profileId: string,
-    recommendation: Recommendation
-  ): Promise<Recommendation> {
-    const recommendation = await this.getPreferenceByIdProfile(profileId);
-
-    Object.assign(recommendation, recommendation);
-
-    return await this.recommendationRepository.save(recommendation);
-  }
-
-
-//Supprimer une recommandation
-  async remove(id: string): Promise<void> {
+  /**
+   * Supprime une recommandation
+   */
+  async remove(id: number): Promise<void> {
     const recommendation = await this.findOne(id);
     await this.recommendationRepository.remove(recommendation);
   }
 
-
- //Créer ou mettre à jour les préférences pour un profil (upsert)
-
-  async upsertPreferenceForProfile(
-    profileId: string,
-    recommendation: Partial<recommendation>
+  /**
+   * Crée ou met à jour une recommandation pour un profil (upsert)
+   */
+  async upsertRecommendationForProfile(
+    profileId: number,
+    recommendationData: Partial<Recommendation>
   ): Promise<Recommendation> {
-    try {
-      // Essayer de récupérer la recommandation existante
-      const existingRecommendation = await this.getPreferenceByIdProfile(profileId);
+    const existingRecommendation = await this.getRecommendationByProfile(profileId);
 
-      // Si elle existe, la mettre à jour
-      Object.assign(existingRecommendation, recommendation);
+    if (existingRecommendation) {
+      // Mise à jour
+      Object.assign(existingRecommendation, recommendationData);
       return await this.recommendationRepository.save(existingRecommendation);
-
-    } catch (error) {
-      // Si elle n'existe pas, en créer une nouvelle
-      if (error instanceof NotFoundException) {
-        const newRecommendation = this.recommendationRepository.create({
-          ...recommendation,
-          profile: { id: profileId } as any,
-        });
-        return await this.recommendationRepository.save(newRecommendation);
-      }
-      throw error;
+    } else {
+      // Création
+      const newRecommendation = this.recommendationRepository.create({
+        ...recommendationData,
+        profile: { id: profileId } as any,
+      });
+      return await this.recommendationRepository.save(newRecommendation);
     }
   }
 
+  /**
+   * Met à jour l'historique d'achat d'un profil
+   */
+  async updatePurchaseHistory(profileId: number, articleId: string): Promise<void> {
+    const existingRecommendation = await this.getRecommendationByProfile(profileId);
 
+    const historyList = this.updateHistoryList(
+      existingRecommendation?.historicAchat || '',
+      articleId
+    );
 
-}
+    const recommendationData: Partial<Recommendation> = {
+      historicAchat: historyList.join(','),
+      productFav: articleId,
+    };
 
-async getRecommendedProducts(profileId: string): Promise<Product[]> {
-  // 1. Récupérer ou créer la recommandation pour ce profil
-  let recommendation = await this.getRecommendationByIdProfile(profileId);
-
-  if (!recommendation) {
-    // Si pas de recommandation existante, on la calcule
-    recommendation = await this.calculateAndUpsertRecommendation(profileId);
+    await this.upsertRecommendationForProfile(profileId, recommendationData);
   }
 
-  // 2. Récupérer les produits recommandés basés sur categoryFav et artisteFav
-  const recommendedProducts = await this.findSimilarProducts(recommendation);
+  /**
+   * Récupère les produits recommandés pour un profil
+   */
+  async getRecommendedProducts(profileId: number): Promise<Product[]> {
+    let recommendation = await this.getRecommendationByProfile(profileId);
 
-  return recommendedProducts.slice(0, 10); // Limiter à 10 produits
+    if (!recommendation) {
+      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+    }
+
+    const recommendedProducts = await this.findSimilarProducts(recommendation);
+    return recommendedProducts.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
+  }
+
+  /**
+   * Récupère les produits recommandés basés sur l'historique d'achat
+   */
+  async getRecommendedProductsFromHistory(profileId: number): Promise<Product[]> {
+    let recommendation = await this.getRecommendationByProfile(profileId);
+
+    if (!recommendation) {
+      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+    }
+
+    if (!recommendation.historicAchat) {
+      return [];
+    }
+
+    const historyBasedPreferences = await this.calculateHistoryBasedPreferences(
+      recommendation.historicAchat
+    );
+
+    const recommendedProducts = await this.findSimilarProductsFromHistory(
+      historyBasedPreferences,
+      recommendation.historicAchat
+    );
+
+    return recommendedProducts.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
+  }
+
+
+
+
+  /**
+   * Récupère les produits recommandés pour un profil, en combinant recommandations classiques et historiques
+   */
+  async getCombinedRecommendedProducts(profileId: number): Promise<Product[]> {
+    let recommendation = await this.getRecommendationByProfile(profileId);
+
+    if (!recommendation) {
+      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+    }
+
+    // Recommandations classiques
+    const classicRecommended = await this.findSimilarProducts(recommendation);
+
+    // Recommandations basées sur l'historique
+    let historyRecommended: Product[] = [];
+    if (recommendation.historicAchat) {
+      const historyBasedPreferences = await this.calculateHistoryBasedPreferences(
+        recommendation.historicAchat
+      );
+
+      historyRecommended = await this.findSimilarProductsFromHistory(
+        historyBasedPreferences,
+        recommendation.historicAchat
+      );
+    }
+
+    // Fusion sans doublons (en supposant que chaque produit a un id unique)
+    const productMap = new Map<number, Product>();
+    [...classicRecommended, ...historyRecommended].forEach((p) => {
+      productMap.set(p.id, p);
+    });
+
+    const combined = Array.from(productMap.values());
+    return combined.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
+  }
+
+
+
+
+
+
+
+
+  /**
+   * Met à jour la liste d'historique en ajoutant un nouvel article
+   */
+  private updateHistoryList(currentHistory: string, newArticleId: string): string[] {
+    let historyList: string[] = [];
+
+    if (currentHistory && currentHistory.trim()) {
+      historyList = currentHistory.split(',').map(id => id.trim()).filter(id => id);
+      // Supprimer l'article s'il existe déjà pour éviter les doublons
+      historyList = historyList.filter(id => id !== newArticleId);
+    }
+    historyList.unshift(newArticleId);
+
+    if (historyList.length > RecommendationService.MAX_HISTORY_SIZE) {
+      historyList = historyList.slice(0, RecommendationService.MAX_HISTORY_SIZE);
+    }
+    return historyList;
+  }
+
+
+/**
+ * Retourne les produits globalement les plus recommandés (selon le champ productFav de toutes les recommandations)
+ */
+private async GetRecommendedProductGlobal(): Promise<Product[]> {
+  const allRecommendations = await this.recommendationRepository.find();
+
+  const productIdCount = new Map<string, number>();
+
+  for (const rec of allRecommendations) {
+    const productId = rec.productFav;
+    if (!productId) continue;
+    productIdCount.set(productId, (productIdCount.get(productId) || 0) + 1);
+  }
+
+  const topProductIds = Array.from(productIdCount.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS)
+    .map(([id]) => id);
+
+  const topProducts = await this.productRepository.findBy({
+    id: In(topProductIds)
+  });
+
+  const productMap = new Map(topProducts.map(p => [p.id.toString(), p]));
+  return topProductIds.map(id => productMap.get(id)).filter(p => p !== undefined) as Product[];
 }
 
 
 
+  /**
+   * Calcule et sauvegarde les recommandations basées sur les favoris
+   */
+  private async calculateAndUpsertRecommendation(profileId: number): Promise<Recommendation> {
+    const favoris = await this.favorisRepository.find({
+      where: { profile: { id: profileId } },
+      relations: ['profile']
+    });
 
-private async calculateAndUpsertRecommendation(profileId: string): Promise<Recommendation> {
-  // 1. Récupérer tous les favoris du profil
-  const favoris = await this.favorisRepository.find({
-    where: { profile: { id: profileId } },
-    relations: ['profile']
-  });
+    const artistFavoris = favoris.filter(fav => fav.targetType === TargetType.ARTIST);
+    const productFavoris = favoris.filter(fav => fav.targetType === TargetType.PRODUCT);
+    const artisteFav = this.calculateMostFrequentTarget(artistFavoris);
+    const categoryFav = await this.calculateMostFrequentCategory(productFavoris);
+    const recommendationData: Partial<Recommendation> = {
+      categoryFav,
+      artisteFav,
+    };
 
-  // 2. Séparer les favoris par type
-  const artistFavoris = favoris.filter(fav => fav.targetType === TargetType.ARTIST);
-  const productFavoris = favoris.filter(fav => fav.targetType === TargetType.PRODUCT);
+    return await this.upsertRecommendationForProfile(profileId, recommendationData);
+  }
 
-  // 3. Calculer artisteFav (l'artiste le plus fréquent)
-  let artisteFav = '';
-  if (artistFavoris.length > 0) {
-    const artistCounts = artistFavoris.reduce((acc, fav) => {
+  /**
+   * Calcule l'élément le plus fréquent dans une liste de favoris
+   */
+  private calculateMostFrequentTarget(favoris: Favoris[]): string {
+    if (favoris.length === 0) return '';
+
+    const counts = favoris.reduce((acc, fav) => {
       acc[fav.targetId] = (acc[fav.targetId] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    artisteFav = Object.keys(artistCounts).reduce((a, b) =>
-      artistCounts[a] > artistCounts[b] ? a : b
-    );
+    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
   }
 
-  // 4. Calculer categoryFav depuis les produits favoris
-  let categoryFav = '';
-  if (productFavoris.length > 0) {
-    // Récupérer les produits avec leurs catégories
+  /**
+   * Calcule la catégorie la plus fréquente à partir des produits favoris
+   */
+  private async calculateMostFrequentCategory(productFavoris: Favoris[]): Promise<string> {
+    if (productFavoris.length === 0) return '';
+
     const products = await this.productRepository.find({
       where: { id: In(productFavoris.map(fav => fav.targetId)) },
       relations: ['categories']
     });
 
-    // Compter les catégories
     const categoryCounts: Record<string, number> = {};
     products.forEach(product => {
       product.categories.forEach(category => {
@@ -179,193 +331,144 @@ private async calculateAndUpsertRecommendation(profileId: string): Promise<Recom
       });
     });
 
-    if (Object.keys(categoryCounts).length > 0) {
-      categoryFav = Object.keys(categoryCounts).reduce((a, b) =>
-        categoryCounts[a] > categoryCounts[b] ? a : b
-      );
-    }
-  }
+    if (Object.keys(categoryCounts).length === 0) return '';
 
-  // 5. Créer/Mettre à jour la recommandation
-  const recommendationData: Partial<Recommendation> = {
-    categoryFav,
-    artisteFav,
-
-  };
-
-  return await this.upsertRecommendationForProfile(profileId, recommendationData);
-}
-
-private async findSimilarProducts(recommendation: Recommendation): Promise<Product[]> {
-  const queryBuilder = this.productRepository.createQueryBuilder('product')
-    .leftJoinAndSelect('product.artists', 'artist')
-    .leftJoinAndSelect('product.categories', 'category');
-
-  const conditions: string[] = [];
-  const parameters: any = {};
-
-  // Filtrer par catégorie favorite si elle existe
-  if (recommendation.categoryFav) {
-    conditions.push('category.id = :categoryFav');
-    parameters.categoryFav = recommendation.categoryFav;
-  }
-
-  // Filtrer par artiste favori si il existe
-  if (recommendation.artisteFav) {
-    conditions.push('artist.id = :artisteFav');
-    parameters.artisteFav = recommendation.artisteFav;
-  }
-
-  // Combiner les conditions avec OR pour avoir plus de résultats
-  if (conditions.length > 0) {
-    queryBuilder.where(`(${conditions.join(' OR ')})`, parameters);
-  }
-
-  // Exclure les produits déjà dans l'historique d'achat
-  if (recommendation.historicAchat) {
-    const historicIds = recommendation.historicAchat.split(',');
-    queryBuilder.andWhere('product.id NOT IN (:...historicIds)', { historicIds });
-  }
-
-  // Ordonner par pertinence (vous pouvez ajuster cette logique)
-  queryBuilder
-    .orderBy('RAND()') // Ordre aléatoire pour varier les recommandations
-    .limit(10); // Récupérer plus que nécessaire pour avoir des options
-
-  return await queryBuilder.getMany();
-}
-
-
-// Nouvelle méthode dans le service
-async getRecommendedProductsFromHistory(profileId: string): Promise<Product[]> {
-  // 1. Récupérer ou créer la recommandation pour ce profil
-  let recommendation = await this.getRecommendationByIdProfile(profileId);
-
-  if (!recommendation) {
-    // Si pas de recommandation existante, on la calcule
-    recommendation = await this.calculateAndUpsertRecommendation(profileId);
-  }
-
-  // 2. Calculer les catégories et artistes les plus présents dans l'historique
-  const historyBasedPreferences = await this.calculateHistoryBasedPreferences(recommendation.historicAchat);
-
-  // 3. Récupérer les produits recommandés basés sur l'historique
-  const recommendedProducts = await this.findSimilarProductsFromHistory(
-    historyBasedPreferences,
-    recommendation.historicAchat
-  );
-
-  return recommendedProducts.slice(0, 10); // Limiter à 10 produits
-}
-
-// Méthode pour calculer les préférences basées sur l'historique
-private async calculateHistoryBasedPreferences(historicAchat: string): Promise<{
-  mostFrequentCategory: string;
-  mostFrequentArtist: string;
-}> {
-  if (!historicAchat || historicAchat.trim() === '') {
-    return {
-      mostFrequentCategory: '',
-      mostFrequentArtist: ''
-    };
-  }
-
-  // 1. Récupérer les IDs des produits de l'historique
-  const historicIds = historicAchat.split(',').map(id => id.trim()).filter(id => id);
-
-  if (historicIds.length === 0) {
-    return {
-      mostFrequentCategory: '',
-      mostFrequentArtist: ''
-    };
-  }
-
-  // 2. Récupérer les produits de l'historique avec leurs catégories et artistes
-  const historicProducts = await this.productRepository.find({
-    where: { id: In(historicIds) },
-    relations: ['categories', 'artists']
-  });
-
-  // 3. Compter les catégories les plus fréquentes
-  const categoryCounts: Record<string, number> = {};
-  historicProducts.forEach(product => {
-    product.categories.forEach(category => {
-      categoryCounts[category.id] = (categoryCounts[category.id] || 0) + 1;
-    });
-  });
-
-  // 4. Compter les artistes les plus fréquents
-  const artistCounts: Record<string, number> = {};
-  historicProducts.forEach(product => {
-    product.artists.forEach(artist => {
-      artistCounts[artist.id] = (artistCounts[artist.id] || 0) + 1;
-    });
-  });
-
-  // 5. Trouver la catégorie la plus fréquente
-  let mostFrequentCategory = '';
-  if (Object.keys(categoryCounts).length > 0) {
-    mostFrequentCategory = Object.keys(categoryCounts).reduce((a, b) =>
+    return Object.keys(categoryCounts).reduce((a, b) =>
       categoryCounts[a] > categoryCounts[b] ? a : b
     );
   }
 
-  // 6. Trouver l'artiste le plus fréquent
-  let mostFrequentArtist = '';
-  if (Object.keys(artistCounts).length > 0) {
-    mostFrequentArtist = Object.keys(artistCounts).reduce((a, b) =>
-      artistCounts[a] > artistCounts[b] ? a : b
-    );
+  /**
+   * Trouve des produits similaires basés sur les recommandations
+   */
+  private async findSimilarProducts(recommendation: Recommendation): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.artists', 'artist')
+      .leftJoinAndSelect('product.categories', 'category');
+
+    const conditions: string[] = [];
+    const parameters: any = {};
+
+    if (recommendation.categoryFav) {
+      conditions.push('category.id = :categoryFav');
+      parameters.categoryFav = recommendation.categoryFav;
+    }
+
+    if (recommendation.artisteFav) {
+      conditions.push('artist.id = :artisteFav');
+      parameters.artisteFav = recommendation.artisteFav;
+    }
+
+    if (conditions.length > 0) {
+      queryBuilder.where(`(${conditions.join(' OR ')})`, parameters);
+    }
+
+    this.excludeHistoryProducts(queryBuilder, recommendation.historicAchat);
+
+    return await queryBuilder
+      .orderBy('RAND()')
+      .limit(RecommendationService.MAX_RECOMMENDED_PRODUCTS)
+      .getMany();
   }
 
-  return {
-    mostFrequentCategory,
-    mostFrequentArtist
-  };
-}
+  /**
+   * Calcule les préférences basées sur l'historique d'achat
+   */
+  private async calculateHistoryBasedPreferences(historicAchat: string): Promise<HistoryBasedPreferences> {
+    const historicIds = this.parseHistoryIds(historicAchat);
 
-// Méthode pour trouver des produits similaires basés sur l'historique
-private async findSimilarProductsFromHistory(
-  preferences: { mostFrequentCategory: string; mostFrequentArtist: string },
-  historicAchat: string
-): Promise<Product[]> {
-  const queryBuilder = this.productRepository.createQueryBuilder('product')
-    .leftJoinAndSelect('product.artists', 'artist')
-    .leftJoinAndSelect('product.categories', 'category');
+    if (historicIds.length === 0) {
+      return { mostFrequentCategory: '', mostFrequentArtist: '' };
+    }
 
-  const conditions: string[] = [];
-  const parameters: any = {};
+    const historicProducts = await this.productRepository.find({
+      where: { id: In(historicIds) },
+      relations: ['categories', 'artists']
+    });
 
-  // Filtrer par catégorie la plus fréquente dans l'historique
-  if (preferences.mostFrequentCategory) {
-    conditions.push('category.id = :mostFrequentCategory');
-    parameters.mostFrequentCategory = preferences.mostFrequentCategory;
+    const categoryCounts = this.countCategories(historicProducts);
+    const artistCounts = this.countArtists(historicProducts);
+
+    return {
+      mostFrequentCategory: this.getMostFrequent(categoryCounts),
+      mostFrequentArtist: this.getMostFrequent(artistCounts)
+    };
   }
 
-  // Filtrer par artiste le plus fréquent dans l'historique
-  if (preferences.mostFrequentArtist) {
-    conditions.push('artist.id = :mostFrequentArtist');
-    parameters.mostFrequentArtist = preferences.mostFrequentArtist;
+  /**
+   * Trouve des produits similaires basés sur l'historique
+   */
+  private async findSimilarProductsFromHistory(
+    preferences: HistoryBasedPreferences,
+    historicAchat: string
+  ): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product')
+      .leftJoinAndSelect('product.artists', 'artist')
+      .leftJoinAndSelect('product.categories', 'category');
+
+    const conditions: string[] = [];
+    const parameters: any = {};
+
+    if (preferences.mostFrequentCategory) {
+      conditions.push('category.id = :mostFrequentCategory');
+      parameters.mostFrequentCategory = preferences.mostFrequentCategory;
+    }
+
+    if (preferences.mostFrequentArtist) {
+      conditions.push('artist.id = :mostFrequentArtist');
+      parameters.mostFrequentArtist = preferences.mostFrequentArtist;
+    }
+
+    if (conditions.length > 0) {
+      queryBuilder.where(`(${conditions.join(' OR ')})`, parameters);
+    }
+
+    this.excludeHistoryProducts(queryBuilder, historicAchat);
+
+    return await queryBuilder
+      .orderBy('RAND()')
+      .limit(RecommendationService.MAX_RECOMMENDED_PRODUCTS)
+      .getMany();
   }
 
-  // Combiner les conditions avec OR pour avoir plus de résultats
-  if (conditions.length > 0) {
-    queryBuilder.where(`(${conditions.join(' OR ')})`, parameters);
+  /**
+   * Méthodes utilitaires
+   */
+  private parseHistoryIds(historicAchat: string): string[] {
+    if (!historicAchat || historicAchat.trim() === '') return [];
+    return historicAchat.split(',').map(id => id.trim()).filter(id => id);
   }
 
-  // Exclure les produits déjà dans l'historique d'achat
-  if (historicAchat && historicAchat.trim() !== '') {
-    const historicIds = historicAchat.split(',').map(id => id.trim()).filter(id => id);
+  private excludeHistoryProducts(queryBuilder: any, historicAchat: string): void {
+    const historicIds = this.parseHistoryIds(historicAchat);
     if (historicIds.length > 0) {
       queryBuilder.andWhere('product.id NOT IN (:...historicIds)', { historicIds });
     }
   }
 
-  // Ordonner par pertinence (ordre aléatoire pour varier les recommandations)
-  queryBuilder
-    .orderBy('RAND()')
-    .limit(10);
+  private countCategories(products: Product[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    products.forEach(product => {
+      product.categories.forEach(category => {
+        counts[category.id] = (counts[category.id] || 0) + 1;
+      });
+    });
+    return counts;
+  }
 
-  return await queryBuilder.getMany();
+  private countArtists(products: Product[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    products.forEach(product => {
+      product.artists.forEach(artist => {
+        counts[artist.id] = (counts[artist.id] || 0) + 1;
+      });
+    });
+    return counts;
+  }
+
+  private getMostFrequent(counts: Record<string, number>): string {
+    const keys = Object.keys(counts);
+    if (keys.length === 0) return '';
+    return keys.reduce((a, b) => counts[a] > counts[b] ? a : b);
+  }
 }
-
