@@ -16,16 +16,6 @@ export class ProfileService {
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
-  async findAll(): Promise<ProfileDto[]> {
-    const list = await this.repo.find({ relations: ['user'] });
-    return list.map(ProfileMapper.toGetDto);
-  }
-
-  async findOne(id: string): Promise<ProfileDto> {
-    const entity = await this.repo.findOne({ where: { id }, relations: ['user'] });
-    if (!entity) throw new NotFoundException('Profil non trouvé');
-    return ProfileMapper.toGetDto(entity);
-  }
 
   async create(dto: CreateProfileDto): Promise<ProfileDto> {
     const user = await this.userRepo.findOne({ where: { id: dto.userId } });

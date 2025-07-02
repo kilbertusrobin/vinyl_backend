@@ -17,16 +17,6 @@ export class ProfileController {
     return this.service.findByUserId(req.user.id);
   }
 
-  @Get()
-  findAll(): Promise<ProfileDto[]> {
-    return this.service.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<ProfileDto> {
-    return this.service.findOne(id);
-  }
-
   @Post()
   create(@Body() dto: CreateProfileDto): Promise<ProfileDto> {
     return this.service.create(dto);

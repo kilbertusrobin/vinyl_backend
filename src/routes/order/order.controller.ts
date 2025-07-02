@@ -10,7 +10,7 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Get()
+  @Get('/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('jwt-auth')
   async findAll(@Req() req): Promise<OrderDto[]> {

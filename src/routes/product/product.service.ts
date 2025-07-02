@@ -37,13 +37,6 @@ export class ProductService {
     return products.map(ProductMapper.toSimpleDetailsDtoOld);
   }
 
-  async findOne(id: string): Promise<ProductDto> {
-    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
-    if (!product) {
-      throw new NotFoundException('Produit non trouvé');
-    }
-    return ProductMapper.toGetDto(product);
-  }
 
   async create(dto: CreateProductDto): Promise<ProductDto> {
     const product = CreateProductMapper.toEntity(dto);
@@ -102,37 +95,9 @@ export class ProductService {
     await this.productRepository.remove(product);
   }
 
-  async filterProducts(filter: FilterProductDto): Promise<Product[]> {
-    const query = this.productRepository.createQueryBuilder('product')
-      .leftJoinAndSelect('product.artists', 'artist')
-      .leftJoinAndSelect('product.categories', 'category');
 
-    if (filter.productName) {
-      query.andWhere('product.productName ILIKE :productName', { productName: `%${filter.productName}%` });
-    }
-    if (filter.artistName) {
-      query.andWhere('artist.name ILIKE :artistName', { artistName: `%${filter.artistName}%` });
-    }
-    if (filter.date) {
-      query.andWhere('product.date = :date', { date: filter.date });
-    }
-    if (filter.price) {
-      query.andWhere('product.price = :price', { price: filter.price });
-    }
 
-    return query.getMany();
-  }
 
-  async findByCategoryId(categoryId: string): Promise<ProductDto[]> {
-    const products = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.categories', 'category')
-      .leftJoinAndSelect('product.artists', 'artist')
-      .where('category.id = :categoryId', { categoryId })
-      .getMany();
-
-    return products.map(ProductMapper.toGetDto);
-  }
 
   async findDetailsById(id: string): Promise<ProductDetailsDto> {
     const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
@@ -142,13 +107,7 @@ export class ProductService {
     return ProductMapper.toDetailsDto(product);
   }
 
-  async findSimpleDetailsById(id: string): Promise<ProductSimpleDetailsDto> {
-    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
-    if (!product) {
-      throw new NotFoundException('Produit non trouvé');
-    }
-    return ProductMapper.toSimpleDetailsDto(product);
-  }
+
 
   async findFavorisByUserId(userId: string): Promise<ProductSimpleDetailsDto[]> {
     
