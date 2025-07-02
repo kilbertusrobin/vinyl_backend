@@ -1,21 +1,20 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, ParseUUIDPipe, UseGuards, Req } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { OrderDto } from './dtos/order.dto';
 import { CreateOrderDto } from './dtos/create-order.dto';
 import { UpdateOrderDto } from './dtos/update-order.dto';
+import { JwtAuthGuard } from '../user/auth/strategies/jwt-auth.guard';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Get()
-  findAll(): Promise<OrderDto[]> {
-    return this.orderService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<OrderDto> {
-    return this.orderService.findOne(id);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
+  async findAll(@Req() req): Promise<OrderDto[]> {
+    return this.orderService.findAll(req.user.id);
   }
 
   @Post()
@@ -23,13 +22,5 @@ export class OrderController {
     return this.orderService.create(dto);
   }
 
-  @Patch(':id')
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateOrderDto): Promise<OrderDto> {
-    return this.orderService.update(id, dto);
-  }
 
-  @Delete(':id')
-  remove(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.orderService.delete(id);
-  }
 }

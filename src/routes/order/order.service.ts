@@ -21,16 +21,16 @@ export class OrderService {
     private readonly deliveryService: DeliveryService,
   ) {}
 
-  async findAll(): Promise<OrderDto[]> {
-    const orders = await this.orderRepo.find({ relations: ['products', 'profile', 'delivery'] });
+  async findAll(userId: string): Promise<OrderDto[]> {
+    const profile = await this.profileRepo.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil introuvable');
+    const orders = await this.orderRepo.find({
+      where: { profile: { id: profile.id } },
+      relations: ['products', 'profile', 'delivery']
+    });
     return orders.map(OrderMapper.toGetDto);
   }
 
-  async findOne(id: string): Promise<OrderDto> {
-    const order = await this.orderRepo.findOne({ where: { id }, relations: ['products', 'profile', 'delivery'] });
-    if (!order) throw new NotFoundException('Commande introuvable');
-    return OrderMapper.toGetDto(order);
-  }
 
   async create(dto: CreateOrderDto): Promise<OrderDto> {
     const profile = await this.profileRepo.findOne({ where: { id: dto.profileId } });
@@ -52,27 +52,6 @@ export class OrderService {
     return OrderMapper.toGetDto({ ...savedOrder, delivery: { id: deliveryDto.id } } as Order);
   }
 
-  async update(id: string, dto: UpdateOrderDto): Promise<OrderDto> {
-    const order = await this.orderRepo.findOne({ where: { id }, relations: ['products', 'profile', 'delivery'] });
-    if (!order) throw new NotFoundException('Commande introuvable');
 
-    if (dto.orderDate) order.orderDate = dto.orderDate;
-    if (dto.profileId) {
-      const p = await this.profileRepo.findOne({ where: { id: dto.profileId } });
-      if (!p) throw new NotFoundException('Profil introuvable');
-      order.profile = p;
-    }
-    if (dto.productIds) {
-      order.products = await this.productRepo.findBy({ id: In(dto.productIds) });
-    }
 
-    const saved = await this.orderRepo.save(order);
-    return OrderMapper.toGetDto(saved);
-  }
-
-  async delete(id: string): Promise<void> {
-    const order = await this.orderRepo.findOne({ where: { id } });
-    if (!order) throw new NotFoundException('Commande introuvable');
-    await this.orderRepo.remove(order);
-  }
 }
