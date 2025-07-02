@@ -74,7 +74,7 @@ export class RecommendationService {
     // Crée une instance vide avec le profil associé
     let recommendation = new Recommendation();
     recommendation.profile = { id: profileId } as any; // ou récupère l'entité complète si besoin
-    recommendation = await this.calculateAndUpsertRecommendation(profileId)
+    recommendation = await this.calculateAndUpsertRecommendation(Number(profileId))
     return recommendation;
   }
 
@@ -119,10 +119,7 @@ export class RecommendationService {
     profileId: string,
     recommendationData: Partial<Recommendation>
   ): Promise<Recommendation> {
-    const existingRecommendation = await this.recommendationRepository.findOne({
-      where: { profile: { id: profileId } },
-      relations: ['profile'],
-    });
+    const existingRecommendation = await this.getRecommendationByProfile(profileId);
 
     if (existingRecommendation) {
       // Mise à jour
@@ -158,13 +155,22 @@ export class RecommendationService {
   }
 
   /**
+   * Met à jour l'historique d'achat à partir de l'id utilisateur
+   */
+  async updatePurchaseHistoryByUserId(userId: string, articleId: string): Promise<void> {
+    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    await this.updatePurchaseHistory(profile.id, articleId);
+  }
+
+  /**
    * Récupère les produits recommandés pour un profil
    */
   async getRecommendedProducts(profileId: string): Promise<Product[]> {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
     }
 
     const recommendedProducts = await this.findSimilarProducts(recommendation);
@@ -176,7 +182,7 @@ export class RecommendationService {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
     }
 
     if (!recommendation.historicAchat) {
@@ -203,7 +209,7 @@ export class RecommendationService {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
     }
 
     // Recommandations classiques
@@ -242,6 +248,15 @@ export class RecommendationService {
     }
 
     return combined.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
+  }
+
+  /**
+   * Récupère les produits recommandés combinés à partir de l'id utilisateur
+   */
+  async getCombinedRecommendedProductsByUserId(userId: string): Promise<Product[]> {
+    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    return this.getCombinedRecommendedProducts(profile.id);
   }
 
   /**
@@ -361,10 +376,10 @@ export class RecommendationService {
   /**
    * Calcule et sauvegarde les recommandations basées sur les favoris
    */
-  private async calculateAndUpsertRecommendation(profileId: string): Promise<Recommendation> {
+  private async calculateAndUpsertRecommendation(profileId: number): Promise<Recommendation> {
     const favoris = await this.favorisRepository.find({
       where: {
-        profile: { id: profileId },
+        profile: { id: profileId.toString() },
         isFavoris: true
       },
       relations: ['profile', 'product', 'product.categories', 'product.artists']
@@ -378,7 +393,7 @@ export class RecommendationService {
       artistFav,
     };
 
-    return await this.upsertRecommendationForProfile(profileId, recommendationData);
+    return await this.upsertRecommendationForProfile(profileId.toString(), recommendationData);
   }
 
   /**
@@ -580,23 +595,5 @@ export class RecommendationService {
     }
 
     return data?.articleId || null;
-  }
-
-  /**
-   * Met à jour l'historique d'achat à partir de l'id utilisateur
-   */
-  public async updatePurchaseHistoryByUserId(userId: string, articleId: string): Promise<void> {
-    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
-    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
-    return this.updatePurchaseHistory(profile.id, articleId);
-  }
-
-  /**
-   * Récupère les produits recommandés combinés à partir de l'id utilisateur
-   */
-  public async getCombinedRecommendedProductsByUserId(userId: string): Promise<Product[]> {
-    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
-    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
-    return this.getCombinedRecommendedProducts(profile.id);
   }
 }
