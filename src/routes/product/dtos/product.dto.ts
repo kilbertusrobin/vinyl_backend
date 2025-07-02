@@ -95,4 +95,5 @@ export class ProductSimpleDetailsDto {
   artistInfos: ArtistNameBioDto[];
   categoryNames: string[];
   isFavoris?: boolean;
+  favorisId?: string | null;
 }

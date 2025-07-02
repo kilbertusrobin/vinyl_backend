@@ -13,7 +13,7 @@ export class ProductController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('jwt-auth')
-  @Get('with-favoris-status')
+  @Get('with-favoris-status/me')
   async findAllWithFavorisStatus(@Req() req): Promise<ProductSimpleDetailsDto[]> {
     return this.productService.findAllWithFavorisStatus(req.user.id);
   }
@@ -25,7 +25,7 @@ export class ProductController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('jwt-auth')
-  @Get('me')
+  @Get('favoris/me')
   async findMyFavoris(@Req() req): Promise<ProductSimpleDetailsDto[]> {
     console.log('Token utilisateur:', req.user);
     return this.productService.findFavorisByUserId(req.user.id);

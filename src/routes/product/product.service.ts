@@ -179,14 +179,22 @@ export class ProductService {
     });
     // Récupérer tous les produits
     const products = await this.productRepository.find({ relations: ['artists', 'categories'] });
-    // Construire un set des ids des produits favoris
-    const favorisSet = new Set<string>(
-      (profile?.favoris || []).filter(f => f.isFavoris).map(f => f.product.id)
-    );
-    // Retourner tous les produits avec le champ isFavoris
-    return products.map(product =>
-      ProductMapper.toSimpleDetailsDto(product, favorisSet.has(product.id))
-    );
+    // Construire une map produitId -> Favoris (pour accès rapide à isFavoris et id)
+    const favorisMap = new Map<string, { isFavoris: boolean, favorisId: string }>();
+    (profile?.favoris || []).forEach(f => {
+      if (f.product && f.product.id) {
+        favorisMap.set(f.product.id, { isFavoris: f.isFavoris, favorisId: f.id });
+      }
+    });
+    // Retourner tous les produits avec le champ isFavoris et favorisId
+    return products.map(product => {
+      const favoris = favorisMap.get(product.id);
+      return ProductMapper.toSimpleDetailsDto(
+        product,
+        favoris ? favoris.isFavoris : false,
+        favoris ? favoris.favorisId : null
+      );
+    });
   }
 
 }
