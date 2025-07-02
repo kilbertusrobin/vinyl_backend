@@ -27,7 +27,6 @@ export class ProductController {
   @ApiBearerAuth('jwt-auth')
   @Get('favoris/me')
   async findMyFavoris(@Req() req): Promise<ProductSimpleDetailsDto[]> {
-    console.log('Token utilisateur:', req.user);
     return this.productService.findFavorisByUserId(req.user.id);
   }
 
@@ -69,6 +68,13 @@ export class ProductController {
   @Get(':id/names')
   async findNames(@Param('id', ParseUUIDPipe) id: string): Promise<ProductSimpleDetailsDto> {
     return this.productService.findSimpleDetailsById(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
+  @Get(':id/details/me')
+  async findDetailsMe(@Param('id', ParseUUIDPipe) id: string, @Req() req) {
+    return this.productService.findDetailsWithFavorisById(id, req.user.id);
   }
 
 }

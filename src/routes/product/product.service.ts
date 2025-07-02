@@ -151,7 +151,6 @@ export class ProductService {
   }
 
   async findFavorisByUserId(userId: string): Promise<ProductSimpleDetailsDto[]> {
-    console.log('Recherche des favoris pour l\'utilisateur:', userId);
     
     const profile = await this.profileRepository.findOne({ 
       where: { user: { id: userId } }, 
@@ -159,12 +158,9 @@ export class ProductService {
     });
     
     if (!profile) {
-      console.log('Profil non trouvé pour cet utilisateur');
       throw new NotFoundException('Profil non trouvé pour cet utilisateur');
     }
 
-    console.log('Profil trouvé:', profile.id);
-    console.log('Nombre de favoris trouvés:', profile.favoris?.length || 0);
 
     return (profile.favoris || [])
       .filter(favori => favori.isFavoris)
@@ -195,6 +191,33 @@ export class ProductService {
         favoris ? favoris.favorisId : null
       );
     });
+  }
+
+  async findDetailsWithFavorisById(id: string, userId: string): Promise<{ details: ProductDetailsDto, favoris: { isFavoris: boolean, favorisId: string }[] }> {
+    // Détails du produit
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
+    }
+    const details = ProductMapper.toDetailsDto(product);
+
+    // Récupérer le profil de l'utilisateur
+    const profile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!profile) {
+      throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    }
+
+    // Chercher le favoris pour ce profil et ce produit
+    const favorisRepo = this.productRepository.manager.getRepository('Favoris');
+    const favori = await favorisRepo.findOne({
+      where: { profile: { id: profile.id }, product: { id }, isFavoris: true },
+    });
+
+    const favoris = favori ? [{ isFavoris: true, favorisId: favori.id }] : [];
+
+    return { details, favoris };
   }
 
 }
