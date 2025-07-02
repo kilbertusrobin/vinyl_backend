@@ -11,142 +11,55 @@ import {
   HttpCode,
   Headers,
   BadRequestException,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
 import { Recommendation } from './entities/recommendation.entity';
 import { Product } from '../product/entities/product.entity';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../user/auth/strategies/jwt-auth.guard';
 
 @ApiTags('recommendations')
 @Controller('recommendations')
 export class RecommendationController {
   constructor(private readonly recommendationService: RecommendationService) {}
 
-  @Post()
-  create(@Body() createRecommendationDto: Partial<Recommendation>): Promise<Recommendation> {
-    return this.recommendationService.create(createRecommendationDto);
-  }
-
-  @Get()
-  @ApiOperation({ summary: 'Get all recommendations' })
-  findAll(): Promise<Recommendation[]> {
-    return this.recommendationService.findAll();
-  }
-
-  @Get(':id')
-  @ApiParam({ name: 'id', description: 'Recommendation ID' })
-  findOne(@Param('id', ParseIntPipe) id: string): Promise<Recommendation> {
-    return this.recommendationService.findOne(id);
-  }
-
-  @Get('profile/:profileId')
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  getRecommendationByProfile(
-    @Param('profileId', ParseIntPipe) profileId: string
-  ): Promise<Recommendation> {
-    return this.recommendationService.getRecommendationByProfile(profileId);
-  }
-
-  @Patch(':id')
-  @ApiParam({ name: 'id', description: 'Recommendation ID' })
-  update(
-    @Param('id', ParseIntPipe) id: string,
-    @Body() updateRecommendationDto: Partial<Recommendation>,
-  ): Promise<Recommendation> {
-    return this.recommendationService.update(id, updateRecommendationDto);
-  }
-
-  @Patch('profile/:profileId')
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  updateRecommendationByProfile(
-    @Param('profileId', ParseIntPipe) profileId: string,
-    @Body() updateRecommendationDto: Partial<Recommendation>,
-  ): Promise<Recommendation> {
-    return this.recommendationService.updateRecommendationByProfile(profileId, updateRecommendationDto);
-  }
-
-  @Delete(':id')
+  @Post('profile/purchase-history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiParam({ name: 'id', description: 'Recommendation ID' })
-  remove(@Param('id', ParseIntPipe) id: string): Promise<void> {
-    return this.recommendationService.remove(id);
-  }
-
-  @Post('profile/:profileId')
-
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  upsertRecommendationForProfile(
-    @Param('profileId', ParseIntPipe) profileId: string,
-    @Body() recommendationData: Partial<Recommendation>,
-  ): Promise<Recommendation> {
-    return this.recommendationService.upsertRecommendationForProfile(profileId, recommendationData);
-  }
-
-  @Post('profile/:profileId/purchase-history')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
   async updatePurchaseHistory(
-    @Param('profileId', ParseIntPipe) profileId: string,
     @Headers('content-type') contentType: string,
-    @Body() rawBody: any
+    @Body() rawBody: any,
+    @Req() req
   ): Promise<void> {
-    const articleId = this.extractArticleId(rawBody, contentType);
+    const profileId = req.user.profile.id;
+    const articleId = this.recommendationService.extractArticleId(rawBody, contentType);
     if (!articleId) {
       throw new BadRequestException('articleId is required');
     }
     await this.recommendationService.updatePurchaseHistory(profileId, articleId);
   }
 
-  @Get('recommended-from-fav/:profileId')
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  async getRecommendedProductsFromFav(
-    @Param('profileId', ParseIntPipe) profileId: string
-  ): Promise<Product[]> {
-    return this.recommendationService.getRecommendedProducts(profileId);
-  }
-
-  @Get('recommended-from-history/:profileId')
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  async getRecommendedProductsFromHistory(
-    @Param('profileId', ParseIntPipe) profileId: string
-  ): Promise<Product[]> {
-    return this.recommendationService.getRecommendedProductsFromHistory(profileId);
-  }
-
-  @Get('recommended/:profileId')
-  @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  async getRecommendedProducts(
-    @Param('profileId', ParseIntPipe) profileId: string
-  ): Promise<Product[]> {
+  @Get('recommended')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
+  async getRecommendedProducts(@Req() req): Promise<Product[]> {
+    const profileId = req.user.profile.id;
     return this.recommendationService.getCombinedRecommendedProducts(profileId);
   }
-
 
   @Get('global')
   async getGlobalRecommendations(): Promise<Product[]> {
     return this.recommendationService.GetRecommendedProductGlobal();
   }
 
-
-
-
-  /**
-   * Extrait l'articleId du body de la requête selon le content-type
-   */
-  private extractArticleId(rawBody: any, contentType: string): string | null {
-    let data;
-
-    if (contentType === 'text/plain') {
-      try {
-        data = JSON.parse(rawBody);
-      } catch (error) {
-        console.error('Error parsing JSON:', error);
-        return null;
-      }
-    } else {
-      data = rawBody;
-    }
-
-    return data?.articleId || null;
+  @Get('global/me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
+  async getGlobalRecommendationsMe(@Req() req): Promise<(Product & { isFavoris: boolean })[]> {
+    const userId = req.user.id;
+    return this.recommendationService.getGlobalRecommendationsWithFavorisByUserId(userId);
   }
 }

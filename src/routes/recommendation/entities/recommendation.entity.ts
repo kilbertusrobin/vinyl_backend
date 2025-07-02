@@ -12,7 +12,6 @@ import { AbstractEntity } from 'src/shared';
 
 @Entity('recommendation')
 export class Recommendation extends AbstractEntity {
-  @PrimaryGeneratedColumn()
 
   @Column({ name: 'historique_achat', type: 'text', nullable: true })
   historicAchat: string;

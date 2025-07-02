@@ -4,6 +4,7 @@ import { Repository, In } from 'typeorm';
 import { Recommendation } from './entities/recommendation.entity';
 import { Favoris } from '../favoris/entities/favoris.entity';
 import { Product } from '../product/entities/product.entity';
+import { Profile } from '../profile/entities/profile.entity';
 
 interface HistoryBasedPreferences {
   mostFrequentCategory: string;
@@ -22,6 +23,8 @@ export class RecommendationService {
     private readonly favorisRepository: Repository<Favoris>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    @InjectRepository(Profile)
+    private readonly profileRepository: Repository<Profile>,
   ) {}
 
   /**
@@ -165,9 +168,7 @@ export class RecommendationService {
     return recommendedProducts.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
   }
 
-  /**
-   * Récupère les produits recommandés basés sur l'historique d'achat
-   */
+
   async getRecommendedProductsFromHistory(profileId: string): Promise<Product[]> {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
@@ -283,6 +284,33 @@ export class RecommendationService {
   }
 
   /**
+   * Retourne les produits globaux recommandés avec le statut isFavoris pour un profil donné
+   */
+  public async getGlobalRecommendationsWithFavoris(profileId: string): Promise<(Product & { isFavoris: boolean })[]> {
+    const products = await this.GetRecommendedProductGlobal();
+    // Récupérer tous les favoris actifs de ce profil
+    const favoris = await this.favorisRepository.find({
+      where: { profile: { id: profileId }, isFavoris: true },
+      relations: ['product']
+    });
+    const favorisProductIds = new Set(favoris.map(f => f.product.id));
+    // Ajouter le champ isFavoris à chaque produit
+    return products.map(product => ({
+      ...product,
+      isFavoris: favorisProductIds.has(product.id)
+    }));
+  }
+
+  /**
+   * Retourne les produits globaux recommandés avec isFavoris à partir de l'id utilisateur
+   */
+  public async getGlobalRecommendationsWithFavorisByUserId(userId: string): Promise<(Product & { isFavoris: boolean })[]> {
+    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    return this.getGlobalRecommendationsWithFavoris(profile.id);
+  }
+
+  /**
    * NOUVELLE MÉTHODE: Récupère des produits aléatoires pour compléter les recommandations
    */
   private async getRandomProducts(
@@ -303,7 +331,7 @@ export class RecommendationService {
     }
 
     return await queryBuilder
-      .orderBy('RAND()') // MySQL/MariaDB - Utilisez RANDOM() pour PostgreSQL
+      .orderBy('RANDOM()') // MySQL/MariaDB - Utilisez RANDOM() pour PostgreSQL
       .limit(count)
       .getMany();
   }
@@ -532,5 +560,22 @@ export class RecommendationService {
     const keys = Object.keys(counts);
     if (keys.length === 0) return '';
     return keys.reduce((a, b) => counts[a] > counts[b] ? a : b);
+  }
+
+  public extractArticleId(rawBody: any, contentType: string): string | null {
+    let data;
+
+    if (contentType === 'text/plain') {
+      try {
+        data = JSON.parse(rawBody);
+      } catch (error) {
+        console.error('Error parsing JSON:', error);
+        return null;
+      }
+    } else {
+      data = rawBody;
+    }
+
+    return data?.articleId || null;
   }
 }

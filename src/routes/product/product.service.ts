@@ -37,13 +37,6 @@ export class ProductService {
     return products.map(ProductMapper.toSimpleDetailsDtoOld);
   }
 
-  async findOne(id: string): Promise<ProductDto> {
-    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
-    if (!product) {
-      throw new NotFoundException('Produit non trouvé');
-    }
-    return ProductMapper.toGetDto(product);
-  }
 
   async create(dto: CreateProductDto): Promise<ProductDto> {
     const product = CreateProductMapper.toEntity(dto);
@@ -102,37 +95,9 @@ export class ProductService {
     await this.productRepository.remove(product);
   }
 
-  async filterProducts(filter: FilterProductDto): Promise<Product[]> {
-    const query = this.productRepository.createQueryBuilder('product')
-      .leftJoinAndSelect('product.artists', 'artist')
-      .leftJoinAndSelect('product.categories', 'category');
 
-    if (filter.productName) {
-      query.andWhere('product.productName ILIKE :productName', { productName: `%${filter.productName}%` });
-    }
-    if (filter.artistName) {
-      query.andWhere('artist.name ILIKE :artistName', { artistName: `%${filter.artistName}%` });
-    }
-    if (filter.date) {
-      query.andWhere('product.date = :date', { date: filter.date });
-    }
-    if (filter.price) {
-      query.andWhere('product.price = :price', { price: filter.price });
-    }
 
-    return query.getMany();
-  }
 
-  async findByCategoryId(categoryId: string): Promise<ProductDto[]> {
-    const products = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.categories', 'category')
-      .leftJoinAndSelect('product.artists', 'artist')
-      .where('category.id = :categoryId', { categoryId })
-      .getMany();
-
-    return products.map(ProductMapper.toGetDto);
-  }
 
   async findDetailsById(id: string): Promise<ProductDetailsDto> {
     const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
@@ -142,16 +107,9 @@ export class ProductService {
     return ProductMapper.toDetailsDto(product);
   }
 
-  async findSimpleDetailsById(id: string): Promise<ProductSimpleDetailsDto> {
-    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
-    if (!product) {
-      throw new NotFoundException('Produit non trouvé');
-    }
-    return ProductMapper.toSimpleDetailsDto(product);
-  }
+
 
   async findFavorisByUserId(userId: string): Promise<ProductSimpleDetailsDto[]> {
-    console.log('Recherche des favoris pour l\'utilisateur:', userId);
     
     const profile = await this.profileRepository.findOne({ 
       where: { user: { id: userId } }, 
@@ -159,12 +117,9 @@ export class ProductService {
     });
     
     if (!profile) {
-      console.log('Profil non trouvé pour cet utilisateur');
       throw new NotFoundException('Profil non trouvé pour cet utilisateur');
     }
 
-    console.log('Profil trouvé:', profile.id);
-    console.log('Nombre de favoris trouvés:', profile.favoris?.length || 0);
 
     return (profile.favoris || [])
       .filter(favori => favori.isFavoris)
@@ -195,6 +150,35 @@ export class ProductService {
         favoris ? favoris.favorisId : null
       );
     });
+  }
+
+  async findDetailsWithFavorisById(id: string, userId: string): Promise<{ details: ProductDetailsDto, isFavoris: boolean, favorisId: string | null }> {
+    // Détails du produit
+    const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
+    if (!product) {
+      throw new NotFoundException('Produit non trouvé');
+    }
+    const details = ProductMapper.toDetailsDto(product);
+
+    // Récupérer le profil de l'utilisateur
+    const profile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!profile) {
+      throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    }
+
+    // Chercher le favoris pour ce profil et ce produit
+    const favorisRepo = this.productRepository.manager.getRepository('Favoris');
+    const favori = await favorisRepo.findOne({
+      where: { profile: { id: profile.id }, product: { id }, isFavoris: true },
+    });
+
+    return {
+      details,
+      isFavoris: !!favori,
+      favorisId: favori ? favori.id : null
+    };
   }
 
 }

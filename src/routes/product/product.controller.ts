@@ -27,14 +27,10 @@ export class ProductController {
   @ApiBearerAuth('jwt-auth')
   @Get('favoris/me')
   async findMyFavoris(@Req() req): Promise<ProductSimpleDetailsDto[]> {
-    console.log('Token utilisateur:', req.user);
     return this.productService.findFavorisByUserId(req.user.id);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.productService.findOne(id);
-  }
+
 
   @Post()
   async create(@Body() dto: CreateProductDto): Promise<ProductDto> {
@@ -51,24 +47,16 @@ export class ProductController {
     return this.productService.delete(id);
   }
 
-  @Post('filter')
-  async filter(@Body() filter: FilterProductDto) {
-    return this.productService.filterProducts(filter);
-  }
-
-  @Get('/category/:id')
-  async findByCategory(@Param('id', ParseUUIDPipe) id: string): Promise<ProductDto[]> {
-    return this.productService.findByCategoryId(id);
-  }
-
   @Get(':id/details')
   async findDetails(@Param('id', ParseUUIDPipe) id: string): Promise<ProductDetailsDto> {
     return this.productService.findDetailsById(id);
   }
 
-  @Get(':id/names')
-  async findNames(@Param('id', ParseUUIDPipe) id: string): Promise<ProductSimpleDetailsDto> {
-    return this.productService.findSimpleDetailsById(id);
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
+  @Get(':id/details/me')
+  async findDetailsMe(@Param('id', ParseUUIDPipe) id: string, @Req() req) {
+    return this.productService.findDetailsWithFavorisById(id, req.user.id);
   }
 
 }

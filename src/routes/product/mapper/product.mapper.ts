@@ -53,6 +53,7 @@ export class ProductMapper {
     dto.date = product.date;
     dto.price = product.price;
     dto.description = product.description;
+    dto.imagePath = product.imagePath ?? '';
     dto.createdAt = product.createdAt;
     dto.updatedAt = product.updatedAt;
     dto.artists = product.artists?.map(artist => {
