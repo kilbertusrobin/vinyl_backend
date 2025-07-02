@@ -31,6 +31,18 @@ export class OrderService {
     return orders.map(OrderMapper.toGetDto);
   }
 
+  async findAllWithProductDetails(userId: string): Promise<{ orderDate: Date, products: { productName: string, price: number }[] }[]> {
+    const profile = await this.profileRepo.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil introuvable');
+    const orders = await this.orderRepo.find({
+      where: { profile: { id: profile.id } },
+      relations: ['products']
+    });
+    return orders.map(order => ({
+      orderDate: order.orderDate,
+      products: order.products.map(p => ({ productName: p.productName, price: p.price }))
+    }));
+  }
 
   async create(dto: CreateOrderDto): Promise<OrderDto> {
     const profile = await this.profileRepo.findOne({ where: { id: dto.profileId } });

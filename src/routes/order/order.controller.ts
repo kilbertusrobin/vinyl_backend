@@ -13,8 +13,8 @@ export class OrderController {
   @Get('/me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('jwt-auth')
-  async findAll(@Req() req): Promise<OrderDto[]> {
-    return this.orderService.findAll(req.user.id);
+  async findAll(@Req() req) {
+    return this.orderService.findAllWithProductDetails(req.user.id);
   }
 
   @Post()
