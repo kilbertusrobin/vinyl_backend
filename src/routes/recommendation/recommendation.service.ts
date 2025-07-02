@@ -227,7 +227,18 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
       productMap.set(p.id, p);
     });
 
-    const combined = Array.from(productMap.values());
+    let combined = Array.from(productMap.values());
+
+    // FALLBACK: Compléter avec des produits aléatoires si moins de MAX_RECOMMENDED_PRODUCTS
+        if (combined.length < RecommendationService.MAX_RECOMMENDED_PRODUCTS) {
+          const excludedIds = combined.map(p => p.id);
+          const additionalProducts = await this.getRandomProducts(
+            RecommendationService.MAX_RECOMMENDED_PRODUCTS - combined.length,
+            excludedIds,
+            recommendation.historicAchat
+          );
+          combined = [...combined, ...additionalProducts];
+        }
     return combined.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
   }
 
@@ -282,6 +293,17 @@ public async GetRecommendedProductGlobal(): Promise<Product[]> {
   });
 
   const productMap = new Map(topProducts.map(p => [p.id.toString(), p]));
+  let finalProducts = topProductIds.map(id => productMap.get(id)).filter(p => p !== undefined) as Product[];
+  // FALLBACK: Compléter avec des produits aléatoires si moins de MAX_RECOMMENDED_PRODUCTS
+      if (finalProducts.length < RecommendationService.MAX_RECOMMENDED_PRODUCTS) {
+        const excludedIds = finalProducts.map(p => p.id);
+        const additionalProducts = await this.getRandomProducts(
+          RecommendationService.MAX_RECOMMENDED_PRODUCTS - finalProducts.length,
+          excludedIds
+        );
+        finalProducts = [...finalProducts, ...additionalProducts];
+      }
+
   return topProductIds.map(id => productMap.get(id)).filter(p => p !== undefined) as Product[];
 }
 
@@ -371,7 +393,7 @@ public async GetRecommendedProductGlobal(): Promise<Product[]> {
     if (conditions.length > 0) {
       queryBuilder.where(`(${conditions.join(' OR ')})`, parameters);
     }
-
+    //tej les bail deja acheter
     this.excludeHistoryProducts(queryBuilder, recommendation.historicAchat);
 
     return await queryBuilder
@@ -480,4 +502,31 @@ public async GetRecommendedProductGlobal(): Promise<Product[]> {
     if (keys.length === 0) return '';
     return keys.reduce((a, b) => counts[a] > counts[b] ? a : b);
   }
+
+   /**
+   * NOUVELLE MÉTHODE: Récupère des produits aléatoires pour compléter les recommandations
+   */
+  private async getRandomProducts(
+    count: number,
+    excludedIds: number[] = [],
+    historicAchat?: string
+  ): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product');
+
+    // Exclure les produits déjà sélectionnés
+    if (excludedIds.length > 0) {
+      queryBuilder.andWhere('product.id NOT IN (:...excludedIds)', { excludedIds });
+    }
+
+    // Exclure les produits de l'historique d'achat si fourni
+    if (historicAchat) {
+      this.excludeHistoryProducts(queryBuilder, historicAchat);
+    }
+
+    return await queryBuilder
+      .orderBy('RANDOM()') // MySQL/MariaDB - Utilisez RANDOM() pour PostgreSQL
+      .limit(count)
+      .getMany();
+  }
+
 }
