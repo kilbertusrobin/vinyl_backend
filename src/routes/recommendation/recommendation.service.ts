@@ -578,4 +578,22 @@ export class RecommendationService {
 
     return data?.articleId || null;
   }
+
+  /**
+   * Met à jour l'historique d'achat à partir de l'id utilisateur
+   */
+  public async updatePurchaseHistoryByUserId(userId: string, articleId: string): Promise<void> {
+    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    return this.updatePurchaseHistory(profile.id, articleId);
+  }
+
+  /**
+   * Récupère les produits recommandés combinés à partir de l'id utilisateur
+   */
+  public async getCombinedRecommendedProductsByUserId(userId: string): Promise<Product[]> {
+    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
+    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
+    return this.getCombinedRecommendedProducts(profile.id);
+  }
 }

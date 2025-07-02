@@ -34,20 +34,20 @@ export class RecommendationController {
     @Body() rawBody: any,
     @Req() req
   ): Promise<void> {
-    const profileId = req.user.profile.id;
+    const userId = req.user.id;
     const articleId = this.recommendationService.extractArticleId(rawBody, contentType);
     if (!articleId) {
       throw new BadRequestException('articleId is required');
     }
-    await this.recommendationService.updatePurchaseHistory(profileId, articleId);
+    await this.recommendationService.updatePurchaseHistoryByUserId(userId, articleId);
   }
 
   @Get('recommended')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('jwt-auth')
   async getRecommendedProducts(@Req() req): Promise<Product[]> {
-    const profileId = req.user.profile.id;
-    return this.recommendationService.getCombinedRecommendedProducts(profileId);
+    const userId = req.user.id;
+    return this.recommendationService.getCombinedRecommendedProductsByUserId(userId);
   }
 
   @Get('global')
