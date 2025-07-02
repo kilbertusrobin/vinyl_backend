@@ -5,9 +5,10 @@ import { RecommendationController } from './recommendation.controller';
 import { RecommendationService } from './recommendation.service';
 import { Favoris } from '../favoris/entities/favoris.entity';
 import { Product } from '../product/entities/product.entity';
+import { Profile } from '../profile/entities/profile.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Recommendation, Favoris, Product])],
+  imports: [TypeOrmModule.forFeature([Recommendation, Favoris, Product, Profile])],
   controllers: [RecommendationController],
   providers: [RecommendationService],
 })
