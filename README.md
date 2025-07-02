@@ -75,14 +75,6 @@ Assure-toi que PostgreSQL tourne localement et que les variables `.env` sont bie
 
 ---
 
-## 🧪 Tests
-
-```bash
-npm run test
-```
-
----
-
 ## 📬 Fonctionnalités
 
 - Authentification via JWT
