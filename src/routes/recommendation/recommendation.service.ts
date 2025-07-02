@@ -74,7 +74,7 @@ export class RecommendationService {
     // Crée une instance vide avec le profil associé
     let recommendation = new Recommendation();
     recommendation.profile = { id: profileId } as any; // ou récupère l'entité complète si besoin
-    recommendation = await this.calculateAndUpsertRecommendation(Number(profileId))
+    recommendation = await this.calculateAndUpsertRecommendation(profileId)
     return recommendation;
   }
 
@@ -119,7 +119,10 @@ export class RecommendationService {
     profileId: string,
     recommendationData: Partial<Recommendation>
   ): Promise<Recommendation> {
-    const existingRecommendation = await this.getRecommendationByProfile(profileId);
+    const existingRecommendation = await this.recommendationRepository.findOne({
+      where: { profile: { id: profileId } },
+      relations: ['profile'],
+    });
 
     if (existingRecommendation) {
       // Mise à jour
@@ -161,7 +164,7 @@ export class RecommendationService {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
+      recommendation = await this.calculateAndUpsertRecommendation(profileId);
     }
 
     const recommendedProducts = await this.findSimilarProducts(recommendation);
@@ -173,7 +176,7 @@ export class RecommendationService {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
+      recommendation = await this.calculateAndUpsertRecommendation(profileId);
     }
 
     if (!recommendation.historicAchat) {
@@ -200,7 +203,7 @@ export class RecommendationService {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
+      recommendation = await this.calculateAndUpsertRecommendation(profileId);
     }
 
     // Recommandations classiques
@@ -331,7 +334,7 @@ export class RecommendationService {
     }
 
     return await queryBuilder
-      .orderBy('RANDOM()') // MySQL/MariaDB - Utilisez RANDOM() pour PostgreSQL
+      .orderBy('RANDOM()')
       .limit(count)
       .getMany();
   }
@@ -358,10 +361,10 @@ export class RecommendationService {
   /**
    * Calcule et sauvegarde les recommandations basées sur les favoris
    */
-  private async calculateAndUpsertRecommendation(profileId: number): Promise<Recommendation> {
+  private async calculateAndUpsertRecommendation(profileId: string): Promise<Recommendation> {
     const favoris = await this.favorisRepository.find({
       where: {
-        profile: { id: profileId.toString() },
+        profile: { id: profileId },
         isFavoris: true
       },
       relations: ['profile', 'product', 'product.categories', 'product.artists']
@@ -375,7 +378,7 @@ export class RecommendationService {
       artistFav,
     };
 
-    return await this.upsertRecommendationForProfile(profileId.toString(), recommendationData);
+    return await this.upsertRecommendationForProfile(profileId, recommendationData);
   }
 
   /**
@@ -452,7 +455,7 @@ export class RecommendationService {
     this.excludeHistoryProducts(queryBuilder, recommendation.historicAchat);
 
     return await queryBuilder
-      .orderBy('RAND()')
+      .orderBy('RANDOM()')
       .limit(RecommendationService.MAX_RECOMMENDED_PRODUCTS)
       .getMany();
   }
@@ -512,7 +515,7 @@ export class RecommendationService {
     this.excludeHistoryProducts(queryBuilder, historicAchat);
 
     return await queryBuilder
-      .orderBy('RAND()')
+      .orderBy('RANDOM()')
       .limit(RecommendationService.MAX_RECOMMENDED_PRODUCTS)
       .getMany();
   }
