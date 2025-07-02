@@ -4,7 +4,7 @@ import { Column, Entity, JoinColumn, OneToMany, OneToOne } from 'typeorm';
 import { User } from 'src/routes/user/entities/user.entity';
 import { Favoris } from '../../favoris/entities/favoris.entity';
 import { Order } from '../../order/entities/order.entity';
-
+import { Recommendation } from '../../recommendation/entities/recommendation.entity';
 @Entity('profile')
 export class Profile extends AbstractEntity {
   @Column()
@@ -34,6 +34,10 @@ export class Profile extends AbstractEntity {
   @OneToOne(() => User, user => user.profile, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
+
+  //One One recommendation
+  @OneToOne(() => Recommendation, (recommendation) => recommendation.profile)
+  recommendation: Recommendation;
 
   @OneToMany(() => Favoris, favoris => favoris.profile, { cascade: true })
   favoris: Favoris[];
