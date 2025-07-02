@@ -15,6 +15,7 @@ import { DeliveryModule } from './routes/delivery/delivery.module';
 import { CategoryModule } from './routes/category/category.module';
 import { ArtistModule } from './routes/artist/artist.module';
 import { RecommendationModule } from './routes/recommendation/recommendation.module';
+import { RoleModule } from './routes/role/role.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { RecommendationModule } from './routes/recommendation/recommendation.mod
     DeliveryModule,
     CategoryModule,
     ArtistModule,
+    RoleModule
   ],
   controllers: [AppController],
   providers: [AppService],

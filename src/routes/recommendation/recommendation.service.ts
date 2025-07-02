@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Recommendation } from './entities/recommendation.entity';
-import { Favoris, TargetType } from '../favoris/entities/favoris.entity';
+import { Favoris } from '../favoris/entities/favoris.entity';
 import { Product } from '../product/entities/product.entity';
 
 interface HistoryBasedPreferences {
@@ -44,7 +44,7 @@ export class RecommendationService {
   /**
    * Récupère une recommandation par ID
    */
-  async findOne(id: number): Promise<Recommendation> {
+  async findOne(id: string): Promise<Recommendation> {
     const recommendation = await this.recommendationRepository.findOne({
       where: { id },
       relations: ['profile'],
@@ -58,28 +58,27 @@ export class RecommendationService {
   }
 
   /**
-   * Récupère une recommandation par ID de profil si ull renvoie un new avec les favoris mis a jour
+   * Récupère une recommandation par ID de profil si null renvoie un new avec les favoris mis a jour
    */
-async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
-  const existing = await this.recommendationRepository.findOne({
-    where: { profile: { id: profileId } },
-    relations: ['profile'],
-  });
+  async getRecommendationByProfile(profileId: string): Promise<Recommendation> {
+    const existing = await this.recommendationRepository.findOne({
+      where: { profile: { id: profileId } },
+      relations: ['profile'],
+    });
 
-  if (existing) return existing;
+    if (existing) return existing;
 
-  // Crée une instance vide avec le profil associé
-  let recommendation = new Recommendation();
-  recommendation.profile = { id: profileId } as any; // ou récupère l'entité complète si besoin
-  recommendation=await this.calculateAndUpsertRecommendation(profileId)
-  return recommendation;
-}
-
+    // Crée une instance vide avec le profil associé
+    let recommendation = new Recommendation();
+    recommendation.profile = { id: profileId } as any; // ou récupère l'entité complète si besoin
+    recommendation = await this.calculateAndUpsertRecommendation(Number(profileId))
+    return recommendation;
+  }
 
   /**
    * Met à jour une recommandation
    */
-  async update(id: number, updateRecommendationDto: Partial<Recommendation>): Promise<Recommendation> {
+  async update(id: string, updateRecommendationDto: Partial<Recommendation>): Promise<Recommendation> {
     const existingRecommendation = await this.findOne(id);
     Object.assign(existingRecommendation, updateRecommendationDto);
     return await this.recommendationRepository.save(existingRecommendation);
@@ -89,7 +88,7 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
    * Met à jour une recommandation par ID de profil
    */
   async updateRecommendationByProfile(
-    profileId: number,
+    profileId: string,
     updateRecommendationDto: Partial<Recommendation>
   ): Promise<Recommendation> {
     const existingRecommendation = await this.getRecommendationByProfile(profileId);
@@ -105,7 +104,7 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
   /**
    * Supprime une recommandation
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: string): Promise<void> {
     const recommendation = await this.findOne(id);
     await this.recommendationRepository.remove(recommendation);
   }
@@ -114,7 +113,7 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
    * Crée ou met à jour une recommandation pour un profil (upsert)
    */
   async upsertRecommendationForProfile(
-    profileId: number,
+    profileId: string,
     recommendationData: Partial<Recommendation>
   ): Promise<Recommendation> {
     const existingRecommendation = await this.getRecommendationByProfile(profileId);
@@ -136,7 +135,7 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
   /**
    * Met à jour l'historique d'achat d'un profil
    */
-  async updatePurchaseHistory(profileId: number, articleId: string): Promise<void> {
+  async updatePurchaseHistory(profileId: string, articleId: string): Promise<void> {
     const existingRecommendation = await this.getRecommendationByProfile(profileId);
 
     const historyList = this.updateHistoryList(
@@ -155,11 +154,11 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
   /**
    * Récupère les produits recommandés pour un profil
    */
-  async getRecommendedProducts(profileId: number): Promise<Product[]> {
+  async getRecommendedProducts(profileId: string): Promise<Product[]> {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
     }
 
     const recommendedProducts = await this.findSimilarProducts(recommendation);
@@ -169,11 +168,11 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
   /**
    * Récupère les produits recommandés basés sur l'historique d'achat
    */
-  async getRecommendedProductsFromHistory(profileId: number): Promise<Product[]> {
+  async getRecommendedProductsFromHistory(profileId: string): Promise<Product[]> {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
     }
 
     if (!recommendation.historicAchat) {
@@ -192,17 +191,15 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
     return recommendedProducts.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
   }
 
-
-
-
   /**
    * Récupère les produits recommandés pour un profil, en combinant recommandations classiques et historiques
+   * AVEC FALLBACK - Complète avec des produits aléatoires si moins de 10 produits
    */
-  async getCombinedRecommendedProducts(profileId: number): Promise<Product[]> {
+  async getCombinedRecommendedProducts(profileId: string): Promise<Product[]> {
     let recommendation = await this.getRecommendationByProfile(profileId);
 
     if (!recommendation) {
-      recommendation = await this.calculateAndUpsertRecommendation(profileId);
+      recommendation = await this.calculateAndUpsertRecommendation(Number(profileId));
     }
 
     // Recommandations classiques
@@ -222,21 +219,94 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
     }
 
     // Fusion sans doublons (en supposant que chaque produit a un id unique)
-    const productMap = new Map<number, Product>();
+    const productMap = new Map<string, Product>();
     [...classicRecommended, ...historyRecommended].forEach((p) => {
-      productMap.set(p.id, p);
+      productMap.set(String(p.id), p);
     });
 
-    const combined = Array.from(productMap.values());
+    let combined = Array.from(productMap.values());
+
+    // FALLBACK: Compléter avec des produits aléatoires si moins de MAX_RECOMMENDED_PRODUCTS
+    if (combined.length < RecommendationService.MAX_RECOMMENDED_PRODUCTS) {
+      const excludedIds = combined.map(p =>  p.id.toString());
+      const additionalProducts = await this.getRandomProducts(
+        RecommendationService.MAX_RECOMMENDED_PRODUCTS - combined.length,
+        excludedIds,
+        recommendation.historicAchat
+      );
+      combined = [...combined, ...additionalProducts];
+    }
+
     return combined.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
   }
 
+  /**
+   * Retourne les produits globalement les plus recommandés (selon le champ productFav de toutes les recommandations)
+   * AVEC FALLBACK - Complète avec des produits aléatoires si moins de 10 produits
+   */
+  public async GetRecommendedProductGlobal(): Promise<Product[]> {
+    const allRecommendations = await this.recommendationRepository.find();
 
+    const productIdCount = new Map<string, number>();
 
+    for (const rec of allRecommendations) {
+      const productId = rec.productFav;
+      if (!productId) continue;
+      productIdCount.set(productId, (productIdCount.get(productId) || 0) + 1);
+    }
 
+    const topProductIds = Array.from(productIdCount.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS)
+      .map(([id]) => id);
 
+    const topProducts = await this.productRepository.findBy({
+      id: In(topProductIds)
+    });
 
+    const productMap = new Map<string, Product>(
+      topProducts.map(p => [String(p.id), p])
+    );
+    let finalProducts = topProductIds.map(id => productMap.get(id)).filter(p => p !== undefined) as Product[];
 
+    // FALLBACK: Compléter avec des produits aléatoires si moins de MAX_RECOMMENDED_PRODUCTS
+    if (finalProducts.length < RecommendationService.MAX_RECOMMENDED_PRODUCTS) {
+      const excludedIds = finalProducts.map(p => p.id.toString());
+      const additionalProducts = await this.getRandomProducts(
+        RecommendationService.MAX_RECOMMENDED_PRODUCTS - finalProducts.length,
+        excludedIds
+      );
+      finalProducts = [...finalProducts, ...additionalProducts];
+    }
+
+    return finalProducts.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
+  }
+
+  /**
+   * NOUVELLE MÉTHODE: Récupère des produits aléatoires pour compléter les recommandations
+   */
+  private async getRandomProducts(
+    count: number,
+    excludedIds: string[] = [],
+    historicAchat?: string
+  ): Promise<Product[]> {
+    const queryBuilder = this.productRepository.createQueryBuilder('product');
+
+    // Exclure les produits déjà sélectionnés
+    if (excludedIds.length > 0) {
+      queryBuilder.andWhere('product.id NOT IN (:...excludedIds)', { excludedIds });
+    }
+
+    // Exclure les produits de l'historique d'achat si fourni
+    if (historicAchat) {
+      this.excludeHistoryProducts(queryBuilder, historicAchat);
+    }
+
+    return await queryBuilder
+      .orderBy('RAND()') // MySQL/MariaDB - Utilisez RANDOM() pour PostgreSQL
+      .limit(count)
+      .getMany();
+  }
 
   /**
    * Met à jour la liste d'historique en ajoutant un nouvel article
@@ -257,87 +327,66 @@ async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
     return historyList;
   }
 
-
-/**
- * Retourne les produits globalement les plus recommandés (selon le champ productFav de toutes les recommandations)
- */
-public async GetRecommendedProductGlobal(): Promise<Product[]> {
-  const allRecommendations = await this.recommendationRepository.find();
-
-  const productIdCount = new Map<string, number>();
-
-  for (const rec of allRecommendations) {
-    const productId = rec.productFav;
-    if (!productId) continue;
-    productIdCount.set(productId, (productIdCount.get(productId) || 0) + 1);
-  }
-
-  const topProductIds = Array.from(productIdCount.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS)
-    .map(([id]) => id);
-
-  const topProducts = await this.productRepository.findBy({
-    id: In(topProductIds)
-  });
-
-  const productMap = new Map(topProducts.map(p => [p.id.toString(), p]));
-  return topProductIds.map(id => productMap.get(id)).filter(p => p !== undefined) as Product[];
-}
-
-
-
   /**
    * Calcule et sauvegarde les recommandations basées sur les favoris
    */
   private async calculateAndUpsertRecommendation(profileId: number): Promise<Recommendation> {
     const favoris = await this.favorisRepository.find({
-      where: { profile: { id: profileId } },
-      relations: ['profile']
+      where: {
+        profile: { id: profileId.toString() },
+        isFavoris: true
+      },
+      relations: ['profile', 'product', 'product.categories', 'product.artists']
     });
 
-    const artistFavoris = favoris.filter(fav => fav.targetType === TargetType.ARTIST);
-    const productFavoris = favoris.filter(fav => fav.targetType === TargetType.PRODUCT);
-    const artistFav = this.calculateMostFrequentTarget(artistFavoris);
-    const categoryFav = await this.calculateMostFrequentCategory(productFavoris);
+    const artistFav = this.calculateMostFrequentArtistFromProducts(favoris);
+    const categoryFav = this.calculateMostFrequentCategoryFromProducts(favoris);
+
     const recommendationData: Partial<Recommendation> = {
       categoryFav,
       artistFav,
     };
 
-    return await this.upsertRecommendationForProfile(profileId, recommendationData);
+    return await this.upsertRecommendationForProfile(profileId.toString(), recommendationData);
   }
 
   /**
-   * Calcule l'élément le plus fréquent dans une liste de favoris
+   * Calcule l'artiste le plus fréquent à partir des produits favoris
    */
-  private calculateMostFrequentTarget(favoris: Favoris[]): string {
+  private calculateMostFrequentArtistFromProducts(favoris: Favoris[]): string {
     if (favoris.length === 0) return '';
 
-    const counts = favoris.reduce((acc, fav) => {
-      acc[fav.targetId] = (acc[fav.targetId] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const artistCounts: Record<string, number> = {};
 
-    return Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b);
+    favoris.forEach(fav => {
+      if (fav.product && fav.product.artists) {
+        fav.product.artists.forEach(artist => {
+          artistCounts[artist.id] = (artistCounts[artist.id] || 0) + 1;
+        });
+      }
+    });
+
+    if (Object.keys(artistCounts).length === 0) return '';
+
+    return Object.keys(artistCounts).reduce((a, b) =>
+      artistCounts[a] > artistCounts[b] ? a : b
+    );
   }
 
   /**
    * Calcule la catégorie la plus fréquente à partir des produits favoris
    */
-  private async calculateMostFrequentCategory(productFavoris: Favoris[]): Promise<string> {
-    if (productFavoris.length === 0) return '';
-
-    const products = await this.productRepository.find({
-      where: { id: In(productFavoris.map(fav => fav.targetId)) },
-      relations: ['categories']
-    });
+  private calculateMostFrequentCategoryFromProducts(favoris: Favoris[]): string {
+    if (favoris.length === 0) return '';
 
     const categoryCounts: Record<string, number> = {};
-    products.forEach(product => {
-      product.categories.forEach(category => {
-        categoryCounts[category.id] = (categoryCounts[category.id] || 0) + 1;
-      });
+
+    favoris.forEach(fav => {
+      if (fav.product && fav.product.categories) {
+        fav.product.categories.forEach(category => {
+          categoryCounts[category.id] = (categoryCounts[category.id] || 0) + 1;
+        });
+      }
     });
 
     if (Object.keys(categoryCounts).length === 0) return '';
@@ -364,14 +413,14 @@ public async GetRecommendedProductGlobal(): Promise<Product[]> {
     }
 
     if (recommendation.artistFav) {
-      conditions.push('artist.id = :artisteFav');
+      conditions.push('artist.id = :artistFav');
       parameters.artistFav = recommendation.artistFav;
     }
 
     if (conditions.length > 0) {
       queryBuilder.where(`(${conditions.join(' OR ')})`, parameters);
     }
-
+    //tej les bail deja acheter
     this.excludeHistoryProducts(queryBuilder, recommendation.historicAchat);
 
     return await queryBuilder
@@ -458,9 +507,11 @@ public async GetRecommendedProductGlobal(): Promise<Product[]> {
   private countCategories(products: Product[]): Record<string, number> {
     const counts: Record<string, number> = {};
     products.forEach(product => {
-      product.categories.forEach(category => {
-        counts[category.id] = (counts[category.id] || 0) + 1;
-      });
+        if(product.categories){
+            product.categories.forEach(category => {
+              counts[category.id] = (counts[category.id] || 0) + 1;
+            });
+        }
     });
     return counts;
   }
@@ -468,9 +519,11 @@ public async GetRecommendedProductGlobal(): Promise<Product[]> {
   private countArtists(products: Product[]): Record<string, number> {
     const counts: Record<string, number> = {};
     products.forEach(product => {
-      product.artists.forEach(artist => {
-        counts[artist.id] = (counts[artist.id] || 0) + 1;
-      });
+        if(product.artists){
+            product.artists.forEach(artist => {
+              counts[artist.id] = (counts[artist.id] || 0) + 1;
+            });
+        }
     });
     return counts;
   }

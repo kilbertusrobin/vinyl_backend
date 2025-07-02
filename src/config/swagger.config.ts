@@ -9,6 +9,16 @@ export function swagger(app: INestApplication): string {
     .setDescription('The vinyl API description')
     .setVersion('1.0')
     .addTag('vinyl')
+    .addBearerAuth( 
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        in: 'header',
+      },
+      'jwt-auth', 
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup(swaggerPath, app, document);
