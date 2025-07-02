@@ -13,7 +13,6 @@ import { AbstractEntity } from 'src/shared';
 @Entity('recommendation')
 export class Recommendation extends AbstractEntity {
   @PrimaryGeneratedColumn()
-  id: number;
 
   @Column({ name: 'historique_achat', type: 'text', nullable: true })
   historicAchat: string;
@@ -35,9 +34,4 @@ export class Recommendation extends AbstractEntity {
   @JoinColumn({ name: 'profile_id' })
   profile: Profile;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
 }

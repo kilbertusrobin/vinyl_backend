@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Recommendation } from './entities/recommendation.entity';
-import { Favoris, TargetType } from './entities/favoris.entity';
-import { Product } from './entities/product.entity';
+import { Favoris, TargetType } from '../favoris/entities/favoris.entity';
+import { Product } from '../product/entities/product.entity';
 
 interface HistoryBasedPreferences {
   mostFrequentCategory: string;
@@ -58,14 +58,23 @@ export class RecommendationService {
   }
 
   /**
-   * Récupère une recommandation par ID de profil
+   * Récupère une recommandation par ID de profil si ull renvoie un new avec les favoris mis a jour
    */
-  async getRecommendationByProfile(profileId: number): Promise<Recommendation | null> {
-    return await this.recommendationRepository.findOne({
-      where: { profile: { id: profileId } },
-      relations: ['profile'],
-    });
-  }
+async getRecommendationByProfile(profileId: number): Promise<Recommendation> {
+  const existing = await this.recommendationRepository.findOne({
+    where: { profile: { id: profileId } },
+    relations: ['profile'],
+  });
+
+  if (existing) return existing;
+
+  // Crée une instance vide avec le profil associé
+  let recommendation = new Recommendation();
+  recommendation.profile = { id: profileId } as any; // ou récupère l'entité complète si besoin
+  recommendation=await this.calculateAndUpsertRecommendation(profileId)
+  return recommendation;
+}
+
 
   /**
    * Met à jour une recommandation
@@ -252,7 +261,7 @@ export class RecommendationService {
 /**
  * Retourne les produits globalement les plus recommandés (selon le champ productFav de toutes les recommandations)
  */
-private async GetRecommendedProductGlobal(): Promise<Product[]> {
+public async GetRecommendedProductGlobal(): Promise<Product[]> {
   const allRecommendations = await this.recommendationRepository.find();
 
   const productIdCount = new Map<string, number>();
@@ -289,11 +298,11 @@ private async GetRecommendedProductGlobal(): Promise<Product[]> {
 
     const artistFavoris = favoris.filter(fav => fav.targetType === TargetType.ARTIST);
     const productFavoris = favoris.filter(fav => fav.targetType === TargetType.PRODUCT);
-    const artisteFav = this.calculateMostFrequentTarget(artistFavoris);
+    const artistFav = this.calculateMostFrequentTarget(artistFavoris);
     const categoryFav = await this.calculateMostFrequentCategory(productFavoris);
     const recommendationData: Partial<Recommendation> = {
       categoryFav,
-      artisteFav,
+      artistFav,
     };
 
     return await this.upsertRecommendationForProfile(profileId, recommendationData);
@@ -354,9 +363,9 @@ private async GetRecommendedProductGlobal(): Promise<Product[]> {
       parameters.categoryFav = recommendation.categoryFav;
     }
 
-    if (recommendation.artisteFav) {
+    if (recommendation.artistFav) {
       conditions.push('artist.id = :artisteFav');
-      parameters.artisteFav = recommendation.artisteFav;
+      parameters.artistFav = recommendation.artistFav;
     }
 
     if (conditions.length > 0) {

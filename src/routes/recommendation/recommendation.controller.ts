@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { RecommendationService } from './recommendation.service';
 import { Recommendation } from './entities/recommendation.entity';
-import { Product } from './entities/product.entity';
+import { Product } from '../product/entities/product.entity';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 
 @ApiTags('recommendations')
@@ -99,7 +99,7 @@ export class RecommendationController {
 
   @Get('recommended-from-fav/:profileId')
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
-  async getRecommendedProducts(
+  async getRecommendedProductsFromFav(
     @Param('profileId', ParseIntPipe) profileId: number
   ): Promise<Product[]> {
     return this.recommendationService.getRecommendedProducts(profileId);
