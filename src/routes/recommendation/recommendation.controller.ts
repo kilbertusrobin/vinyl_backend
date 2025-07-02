@@ -35,14 +35,14 @@ export class RecommendationController {
 
   @Get(':id')
   @ApiParam({ name: 'id', description: 'Recommendation ID' })
-  findOne(@Param('id', ParseIntPipe) id: number): Promise<Recommendation> {
+  findOne(@Param('id', ParseIntPipe) id: string): Promise<Recommendation> {
     return this.recommendationService.findOne(id);
   }
 
   @Get('profile/:profileId')
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   getRecommendationByProfile(
-    @Param('profileId', ParseIntPipe) profileId: number
+    @Param('profileId', ParseIntPipe) profileId: string
   ): Promise<Recommendation> {
     return this.recommendationService.getRecommendationByProfile(profileId);
   }
@@ -50,7 +50,7 @@ export class RecommendationController {
   @Patch(':id')
   @ApiParam({ name: 'id', description: 'Recommendation ID' })
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: string,
     @Body() updateRecommendationDto: Partial<Recommendation>,
   ): Promise<Recommendation> {
     return this.recommendationService.update(id, updateRecommendationDto);
@@ -59,7 +59,7 @@ export class RecommendationController {
   @Patch('profile/:profileId')
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   updateRecommendationByProfile(
-    @Param('profileId', ParseIntPipe) profileId: number,
+    @Param('profileId', ParseIntPipe) profileId: string,
     @Body() updateRecommendationDto: Partial<Recommendation>,
   ): Promise<Recommendation> {
     return this.recommendationService.updateRecommendationByProfile(profileId, updateRecommendationDto);
@@ -68,7 +68,7 @@ export class RecommendationController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiParam({ name: 'id', description: 'Recommendation ID' })
-  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+  remove(@Param('id', ParseIntPipe) id: string): Promise<void> {
     return this.recommendationService.remove(id);
   }
 
@@ -76,7 +76,7 @@ export class RecommendationController {
 
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   upsertRecommendationForProfile(
-    @Param('profileId', ParseIntPipe) profileId: number,
+    @Param('profileId', ParseIntPipe) profileId: string,
     @Body() recommendationData: Partial<Recommendation>,
   ): Promise<Recommendation> {
     return this.recommendationService.upsertRecommendationForProfile(profileId, recommendationData);
@@ -86,7 +86,7 @@ export class RecommendationController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   async updatePurchaseHistory(
-    @Param('profileId', ParseIntPipe) profileId: number,
+    @Param('profileId', ParseIntPipe) profileId: string,
     @Headers('content-type') contentType: string,
     @Body() rawBody: any
   ): Promise<void> {
@@ -100,7 +100,7 @@ export class RecommendationController {
   @Get('recommended-from-fav/:profileId')
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   async getRecommendedProductsFromFav(
-    @Param('profileId', ParseIntPipe) profileId: number
+    @Param('profileId', ParseIntPipe) profileId: string
   ): Promise<Product[]> {
     return this.recommendationService.getRecommendedProducts(profileId);
   }
@@ -108,7 +108,7 @@ export class RecommendationController {
   @Get('recommended-from-history/:profileId')
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   async getRecommendedProductsFromHistory(
-    @Param('profileId', ParseIntPipe) profileId: number
+    @Param('profileId', ParseIntPipe) profileId: string
   ): Promise<Product[]> {
     return this.recommendationService.getRecommendedProductsFromHistory(profileId);
   }
@@ -116,7 +116,7 @@ export class RecommendationController {
   @Get('recommended/:profileId')
   @ApiParam({ name: 'profileId', description: 'Profile ID' })
   async getRecommendedProducts(
-    @Param('profileId', ParseIntPipe) profileId: number
+    @Param('profileId', ParseIntPipe) profileId: string
   ): Promise<Product[]> {
     return this.recommendationService.getCombinedRecommendedProducts(profileId);
   }
