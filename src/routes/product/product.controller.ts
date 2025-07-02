@@ -11,6 +11,13 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('jwt-auth')
+  @Get('with-favoris-status')
+  async findAllWithFavorisStatus(@Req() req): Promise<ProductSimpleDetailsDto[]> {
+    return this.productService.findAllWithFavorisStatus(req.user.id);
+  }
+
   @Get()
   async findAll(): Promise<ProductSimpleDetailsDto[]> {
     return this.productService.findAll();

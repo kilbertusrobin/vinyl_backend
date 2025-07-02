@@ -94,4 +94,5 @@ export class ProductSimpleDetailsDto {
   description: string;
   artistInfos: ArtistNameBioDto[];
   categoryNames: string[];
+  isFavoris?: boolean;
 }

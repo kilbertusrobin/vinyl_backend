@@ -71,7 +71,7 @@ export class ProductMapper {
     return dto;
   }
 
-  static toSimpleDetailsDto(product: Product): ProductSimpleDetailsDto {
+  static toSimpleDetailsDto(product: Product, isFavoris?: boolean): ProductSimpleDetailsDto {
     return {
       id: product.id,
       productName: product.productName,
@@ -81,6 +81,11 @@ export class ProductMapper {
       price: product.price,
       imagePath: product.imagePath ?? '',
       description: product.description ?? '',
+      isFavoris: isFavoris,
     }
+  }
+
+  static toSimpleDetailsDtoOld(product: Product): ProductSimpleDetailsDto {
+    return ProductMapper.toSimpleDetailsDto(product, undefined);
   }
 }

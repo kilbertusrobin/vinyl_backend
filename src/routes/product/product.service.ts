@@ -34,7 +34,7 @@ export class ProductService {
 
   async findAll(): Promise<ProductSimpleDetailsDto[]> {
     const products = await this.productRepository.find({ relations: ['artists', 'categories'] });
-    return products.map(ProductMapper.toSimpleDetailsDto);
+    return products.map(ProductMapper.toSimpleDetailsDtoOld);
   }
 
   async findOne(id: string): Promise<ProductDto> {
@@ -169,6 +169,24 @@ export class ProductService {
     return (profile.favoris || [])
       .filter(favori => favori.isFavoris)
       .map(favori => ProductMapper.toSimpleDetailsDto(favori.product));
+  }
+
+  async findAllWithFavorisStatus(userId: string): Promise<ProductSimpleDetailsDto[]> {
+    // Récupérer le profil de l'utilisateur avec ses favoris
+    const profile = await this.profileRepository.findOne({
+      where: { user: { id: userId } },
+      relations: ['favoris', 'favoris.product'],
+    });
+    // Récupérer tous les produits
+    const products = await this.productRepository.find({ relations: ['artists', 'categories'] });
+    // Construire un set des ids des produits favoris
+    const favorisSet = new Set<string>(
+      (profile?.favoris || []).filter(f => f.isFavoris).map(f => f.product.id)
+    );
+    // Retourner tous les produits avec le champ isFavoris
+    return products.map(product =>
+      ProductMapper.toSimpleDetailsDto(product, favorisSet.has(product.id))
+    );
   }
 
 }
