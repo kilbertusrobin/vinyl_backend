@@ -193,7 +193,7 @@ export class ProductService {
     });
   }
 
-  async findDetailsWithFavorisById(id: string, userId: string): Promise<{ details: ProductDetailsDto, favoris: { isFavoris: boolean, favorisId: string }[] }> {
+  async findDetailsWithFavorisById(id: string, userId: string): Promise<{ details: ProductDetailsDto, isFavoris: boolean, favorisId: string | null }> {
     // Détails du produit
     const product = await this.productRepository.findOne({ where: { id }, relations: ['artists', 'categories'] });
     if (!product) {
@@ -215,9 +215,11 @@ export class ProductService {
       where: { profile: { id: profile.id }, product: { id }, isFavoris: true },
     });
 
-    const favoris = favori ? [{ isFavoris: true, favorisId: favori.id }] : [];
-
-    return { details, favoris };
+    return {
+      details,
+      isFavoris: !!favori,
+      favorisId: favori ? favori.id : null
+    };
   }
 
 }
