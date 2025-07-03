@@ -155,15 +155,6 @@ export class RecommendationService {
   }
 
   /**
-   * Met à jour l'historique d'achat à partir de l'id utilisateur
-   */
-  async updatePurchaseHistoryByUserId(userId: string, articleId: string): Promise<void> {
-    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
-    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
-    await this.updatePurchaseHistory(profile.id, articleId);
-  }
-
-  /**
    * Récupère les produits recommandés pour un profil
    */
   async getRecommendedProducts(profileId: string): Promise<Product[]> {
@@ -248,15 +239,6 @@ export class RecommendationService {
     }
 
     return combined.slice(0, RecommendationService.MAX_RECOMMENDED_PRODUCTS);
-  }
-
-  /**
-   * Récupère les produits recommandés combinés à partir de l'id utilisateur
-   */
-  async getCombinedRecommendedProductsByUserId(userId: string): Promise<Product[]> {
-    const profile = await this.profileRepository.findOne({ where: { user: { id: userId } } });
-    if (!profile) throw new NotFoundException('Profil non trouvé pour cet utilisateur');
-    return this.getCombinedRecommendedProducts(profile.id);
   }
 
   /**
@@ -349,7 +331,7 @@ export class RecommendationService {
     }
 
     return await queryBuilder
-      .orderBy('RANDOM()')
+      .orderBy('RANDOM()') // MySQL/MariaDB - Utilisez RANDOM() pour PostgreSQL
       .limit(count)
       .getMany();
   }
