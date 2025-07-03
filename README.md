@@ -9,8 +9,8 @@ Backend Node.js avec NestJS + PostgreSQL pour l'application Vinyl.
 - Node.js v18+
 - Docker & Docker Compose
 - PostgreSQL
-- Stripe (facultatif pour le paiement)
-- Mailjet (facultatif pour l’envoi d’e-mails)
+- Stripe (obligatoire pour le paiement)
+- Mailjet (obligatoire pour l’envoi d’e-mails)
 
 ---
 
