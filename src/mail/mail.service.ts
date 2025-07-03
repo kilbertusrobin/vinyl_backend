@@ -25,7 +25,7 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, token: string) {
-    const verificationLink = `${this.configService.get<string>('FRONTEND_URL')}/login/verify-email?token=${token}`;
+    const verificationLink = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${token}`;
     
     const templatePath = this.getTemplatePath('mail-verify.html');
     const htmlContent = fs.readFileSync(templatePath, 'utf8').replace('{{verification_link}}', verificationLink);
@@ -75,7 +75,7 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password/reset-password?token=${token}`;
+    const resetLink = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${token}`;
 
     const templatePath = this.getTemplatePath('mail-reset-password.html');
     const htmlContent = fs.readFileSync(templatePath, 'utf8')
