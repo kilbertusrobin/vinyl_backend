@@ -452,7 +452,7 @@ export class RecommendationService {
     this.excludeHistoryProducts(queryBuilder, recommendation.historicAchat);
 
     return await queryBuilder
-      .orderBy('RAND()')
+      .orderBy('RANDOM()')
       .limit(RecommendationService.MAX_RECOMMENDED_PRODUCTS)
       .getMany();
   }
@@ -512,7 +512,7 @@ export class RecommendationService {
     this.excludeHistoryProducts(queryBuilder, historicAchat);
 
     return await queryBuilder
-      .orderBy('RAND()')
+      .orderBy('RANDOM()')
       .limit(RecommendationService.MAX_RECOMMENDED_PRODUCTS)
       .getMany();
   }

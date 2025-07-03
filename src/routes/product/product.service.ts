@@ -122,8 +122,7 @@ export class ProductService {
 
 
     return (profile.favoris || [])
-      .filter(favori => favori.isFavoris)
-      .map(favori => ProductMapper.toSimpleDetailsDto(favori.product));
+      .map(favori => ProductMapper.toSimpleDetailsDto(favori.product, favori.isFavoris, favori.id));
   }
 
   async findAllWithFavorisStatus(userId: string): Promise<ProductSimpleDetailsDto[]> {
